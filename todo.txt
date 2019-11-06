@@ -1,0 +1,5 @@
+caching?
+built-in ratelimit? (you should use asyncio locks)
+@on_post and @on_comment decorators
+
+other todos: just ctrl+f "TODO" in repltalk.py lol

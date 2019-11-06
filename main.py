@@ -1,0 +1,85 @@
+import unittest
+import repltalk
+import asyncio
+import datetime
+
+
+class TestReplTalk(unittest.TestCase):
+	def setUp(self):
+		self.client = repltalk.Client()
+		self.loop = asyncio.get_event_loop()
+		self.run_async = self.loop.run_until_complete
+
+	def test_all_posts(self):
+		self.run_async(self.client.boards.all.get_posts())
+
+	def test_board_posts(self):
+		r = self.run_async(self.client.boards.share.get_posts())
+		self.assertIsNotNone(r[0].author)
+
+	def test_post(self):
+		post = self.run_async(self.client.get_post(5599))
+		self.assertIsNotNone(post, 'Post should not be None')
+		self.assertIsNotNone(post.board, 'Post board should not be None')
+		self.assertIsInstance(
+			post.datetime, datetime.datetime, 'Post time is a datetime object'
+		)
+		self.assertIsNotNone(post.author, 'Author is not None')
+		if post.repl is not None:
+			self.assertIsNotNone(post.repl.language)
+		self.assertTrue(post.board.name.istitle(), 'Board name is a title')
+		self.assertTrue(post.board.slug.islower(), 'Board slug is lowercase')
+
+	def test_post_comments(self):
+		comments = self.run_async(self.client.get_all_comments())
+
+	async def async_test_comments(self):
+		post = await self.client.get_post(5599)
+		for c in await post.get_comments():
+			self.assertIsInstance(c.id, int)
+
+	def test_comments(self):
+		self.run_async(self.async_test_comments())
+
+	def test_post_exists(self):
+		exists = self.run_async(self.client.post_exists(1))
+		self.assertFalse(exists, 'Invalid post should not exist')
+
+		exists = self.run_async(self.client.post_exists(5599))
+		self.assertTrue(exists, 'Real post should exist')
+
+	def test_get_user(self):
+		user = self.run_async(self.client.get_user('a'))
+		self.assertIsNone(user)
+
+		user = self.run_async(self.client.get_user('mat1'))
+		self.assertIsInstance(user.id, int, 'User ID is not an integer')
+		self.assertIsNotNone(user)
+
+	async def async_test_leaderboards(self):
+		users = await self.client.get_leaderboard()
+		for user in users:
+			self.assertIsInstance(user.id, int)
+
+	def test_leaderboards(self):
+		self.run_async(self.async_test_leaderboards())
+
+	async def async_test_get_new_posts(self):
+		await self.client.boards.all.get_posts(sort='new')
+
+	def test_get_new_posts(self):
+		self.run_async(self.async_test_get_new_posts())
+
+	def test_answered(self):
+		post = self.run_async(self.client.get_post(12578))
+		self.assertTrue(post.answered)
+		self.assertTrue(post.can_answer)
+
+	def test_language(self):
+		post = self.run_async(self.client.get_post(13315))
+		self.assertEqual(post.language.name, 'python3')
+		self.assertEqual(str(post.language), 'Python')
+
+
+if __name__ == '__main__':
+	unittest.main()
