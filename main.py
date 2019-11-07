@@ -30,8 +30,8 @@ class TestReplTalk(unittest.TestCase):
 		self.assertTrue(post.board.name.istitle(), 'Board name is a title')
 		self.assertTrue(post.board.slug.islower(), 'Board slug is lowercase')
 
-	def test_post_comments(self):
-		comments = self.run_async(self.client.get_all_comments())
+	# def test_post_comments(self):
+	# 	comments = self.run_async(self.client.get_all_comments())
 
 	async def async_test_comments(self):
 		post = await self.client.get_post(5599)
@@ -81,5 +81,4 @@ class TestReplTalk(unittest.TestCase):
 		self.assertEqual(str(post.language), 'Python')
 
 
-if __name__ == '__main__':
-	unittest.main()
+unittest.main()
