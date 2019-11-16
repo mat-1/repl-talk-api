@@ -1,7 +1,7 @@
 caching?
 built-in ratelimit? (you should use asyncio locks)
-@on_post and @on_comment decorators
-async for iterable boards
+@on_post and @on_comment decorators maybe?
 add all important attributes things to documentation
+async for comments
 
 other todos: just ctrl+f "TODO" in repltalk.py

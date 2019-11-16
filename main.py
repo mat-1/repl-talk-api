@@ -10,12 +10,15 @@ class TestReplTalk(unittest.TestCase):
 		self.loop = asyncio.get_event_loop()
 		self.run_async = self.loop.run_until_complete
 
-	def test_all_posts(self):
-		self.run_async(self.client.boards.all.get_posts())
+	# def test_all_posts(self): # deprecated
+	# 	self.run_async(self.client.boards.all.get_posts())
+
+	async def async_test_board_posts(self):
+		async for post in self.client.boards.all.get_posts(sort='new', limit=1):
+			self.assertIsInstance(post.author, repltalk.User)
 
 	def test_board_posts(self):
-		r = self.run_async(self.client.boards.share.get_posts())
-		self.assertIsNotNone(r[0].author)
+		self.run_async(self.async_test_board_posts())
 
 	def test_post(self):
 		post = self.run_async(self.client.get_post(5599))
@@ -64,11 +67,11 @@ class TestReplTalk(unittest.TestCase):
 	def test_leaderboards(self):
 		self.run_async(self.async_test_leaderboards())
 
-	async def async_test_get_new_posts(self):
-		await self.client.boards.all.get_posts(sort='new')
+	# async def async_test_get_new_posts(self):
+	# 	await self.client.boards.all.get_posts(sort='new')
 
-	def test_get_new_posts(self):
-		self.run_async(self.async_test_get_new_posts())
+	# def test_get_new_posts(self):
+	# 	self.run_async(self.async_test_get_new_posts())
 
 	def test_answered(self):
 		post = self.run_async(self.client.get_post(12578))
@@ -79,6 +82,13 @@ class TestReplTalk(unittest.TestCase):
 		post = self.run_async(self.client.get_post(13315))
 		self.assertEqual(post.language.id, 'python3')
 		self.assertEqual(str(post.language), 'Python')
+
+	async def async_test_async_for_posts(self):
+		async for post in self.client.boards.all.get_posts(sort='new', limit=64):
+			self.assertIsInstance(post, repltalk.Post)
+
+	def test_async_for_posts(self):
+		self.run_async(self.async_test_async_for_posts())
 
 
 unittest.main()

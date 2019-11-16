@@ -1,6 +1,7 @@
 import aiohttp
 from datetime import datetime
 from queries import Queries
+import warnings
 
 # Bots approved by the Repl.it Team that are allowed to log in
 # (100% impossible to hack yes definitely)
@@ -50,16 +51,78 @@ class Repl():
 	def __eq__(self, repl2):
 		return self.id == repl2.id
 
+	def __hash__(self):
+		return hash((self.id, self.url, self.title))
+
+
+class AsyncPostList():
+	__slots__ = (
+		'i', 'client', 'sort', 'search', 'after', 'limit', 'posts_queue', 'board'
+	)
+
+	def __init__(
+		self, client, board, limit=32, sort='new', search='', after=None
+	):
+		self.i = 0
+		self.client = client
+
+		self.sort = sort
+		self.search = search
+		self.after = after
+
+		self.limit = limit
+		self.posts_queue = []
+
+		self.board = board
+
+	def __aiter__(self):
+		return self
+
+	async def __anext__(self):
+		if self.i >= self.limit:
+			raise StopAsyncIteration
+		if len(self.posts_queue) == 0:
+			new_posts = await self.board._get_posts(
+				sort=self.sort,
+				search=self.search,
+				after=self.after
+			)
+			self.posts_queue.extend(new_posts['items'])
+			self.after = new_posts['pageInfo']['nextCursor']
+		current_post_raw = self.posts_queue.pop(0)
+		current_post = get_post_object(self.client, current_post_raw)
+
+		self.i += 1
+
+		return current_post
+
+	def __await__(self):
+		post_list = PostList(
+			client=self.client,
+			posts=[],
+			board=self.board,
+			after=self.after,
+			sort=self.sort,
+			search=self.search
+		)
+		return post_list.next().__await__()
+
 
 class PostList(list):
-	__slots__ = ('posts', 'after', 'board', 'sort', 'search', 'i')
+	__slots__ = ('posts', 'after', 'board', 'sort', 'search', 'i', 'client')
 
-	def __init__(self, posts, board, after, sort, search):
+	def __init__(self, client, posts, board, after, sort, search):
 		self.posts = posts
 		self.after = after
 		self.board = board
 		self.sort = sort
 		self.search = search
+		self.client = client
+		warnings.warn(
+			'Doing await get_posts is deprecated, '
+			'use async for post in get_posts instead.',
+			DeprecationWarning
+		)
 
 	def __iter__(self):
 		self.i = 0
@@ -80,16 +143,16 @@ class PostList(list):
 		return self.posts[indices]
 
 	async def next(self):
-		post_list = await self.board.get_posts(
+		new_posts = await self.board._get_posts(
 			sort=self.sort,
 			search=self.search,
 			after=self.after
 		)
-		self.posts = post_list.posts
-		self.board = post_list.board
-		self.after = post_list.after
-		self.sort = post_list.sort
-		self.search = post_list.search
+		posts = [
+			get_post_object(self.client, post_raw) for post_raw in new_posts['items']
+		]
+		self.after = new_posts['pageInfo']['nextCursor']
+		self.posts = posts
 		return self
 
 	def __eq__(self, postlist2):
@@ -219,6 +282,9 @@ class Comment():
 			parent=self
 		)
 
+	def __hash__(self):
+		return hash((self.id, self.content, self.votes, self.replies))
+
 
 class Board():
 	__slots__ = ('client', 'name', )
@@ -235,28 +301,39 @@ class Board():
 			after=after
 		)
 
-	async def get_posts(self, sort='top', search='', after=None):
+	def get_posts(self, sort='top', search='', limit=32, after=None):
 		if sort == 'top':
 			sort = 'votes'
-		_posts = await self._get_posts(
+		return AsyncPostList(
+			self.client,
+			limit=limit,
 			sort=sort,
 			search=search,
-			after=after
+			after=after,
+			board=self
 		)
-		posts = []
-		if 'items' not in _posts:
-			raise KeyError(f'items not in _posts. {_posts}')
-		for post in _posts['items']:
-			posts.append(
-				get_post_object(self.client, post)
-			)
-		return PostList(
-			posts=posts,
-			board=self,
-			after=_posts['pageInfo']['nextCursor'],
-			sort=sort,
-			search=search
-		)
+		# return post_list.ainit(
+		# 	posts=posts,
+		# 	board=self,
+		# 	after=_posts['pageInfo']['nextCursor'],
+		# 	sort=sort,
+		# 	search=search
+		# )
+		# _posts_func = self._get_posts(
+		# 	sort=sort,
+		# 	search=search,
+		# 	after=after
+		# )
+		# posts = []
+		# if 'items' not in _posts:
+		# 	raise KeyError(f'items not in _posts. {_posts}')
+		# for post in _posts['items']:
+		# 	posts.append(
+		# 		get_post_object(self.client, post)
+		# 	)
+
+		# return PostList(
+		# )
 
 	async def create_post(  # TODO
 		self, title: str, content: str, repl: Repl = None, show_hosted=False
@@ -267,6 +344,9 @@ class Board():
 
 	def __repr__(self):
 		return f'<{self.name} board>'
+
+	def __hash__(self):
+		return hash((self.name,))
 
 
 class RichBoard(Board):  # a board with more stuff than usual
@@ -293,6 +373,16 @@ class RichBoard(Board):  # a board with more stuff than usual
 	def __ne__(self, board2):
 		return self.id != board2.id or self.name != board2.name
 
+	def __hash__(self):
+		return hash((
+			self.id,
+			self.name,
+			self.slug,
+			self.body_cta,
+			self.title_cta,
+			self.button_cta
+		))
+
 
 class Language():
 	__slots__ = (
@@ -311,7 +401,7 @@ class Language():
 		self.is_new = data['isNew']
 		icon = data['icon']
 		self.icon_path = icon
-		if icon[0] == '/':
+		if icon and icon[0] == '/':
 			icon = 'https://repl.it' + icon
 		self.icon = icon
 
@@ -326,6 +416,16 @@ class Language():
 
 	def __ne__(self, lang2):
 		return self.key != lang2.key
+
+	def __hash__(self):
+		return hash((
+			self.id,
+			self.display_name,
+			self.key,
+			self.category,
+			self.tagline,
+			self.icon_path
+		))
 
 
 def get_post_object(client, post):
@@ -441,34 +541,64 @@ class Post():
 			post=self,
 		)
 
+	def __hash__(self):
+		return hash((
+			self.id,
+			self.title,
+			self.content
+		))
+
 
 class Subscription():
-	__slots__ = ('name', 'plan_id', 'name', 'plan')
+	__slots__ = ('name', 'id')
 
 	def __init__(
-		self, client, user, subscription
+		self, client, user, data
 	):
-		if subscription is None:
-			self.name = None
-			self.plan_id = None
+		self.id = data['planId']
+		if self.id == 'hacker2':
+			self.name = 'hacker'
 		else:
-			self.plan_id = subscription['planId']
-			if self.plan_id == 'hacker2':
-				self.plan = 'hacker'
-			else:
-				self.name = self.plan_id
+			self.name = self.id
 
 	def __str__(self):
 		return self.name
 
 	def __repr__(self):
-		return f'<{self.plan_id}>'
+		return f'<{self.id}>'
 
 	def __eq__(self, sub2):
-		return self.plan_id == sub2.plan_id
+		return self.id == sub2.id
 
 	def __ne__(self, sub2):
-		return self.plan_id != sub2.plan_id
+		return self.id != sub2.id
+
+	def __hash__(self):
+		return hash((self.id, self.name))
+
+
+class Organization():
+	__slots__ = ('name',)
+
+	def __init__(
+		self, data
+	):
+		self.name = data['name']
+
+	def __str__(self):
+		return self.name
+
+	def __repr__(self):
+		return f'<{self.name}>'
+
+	def __eq__(self, sub2):
+		return self.name == sub2.name
+
+	def __ne__(self, sub2):
+		return self.name != sub2.name
+
+	def __hash__(self):
+		return hash((self.name,))
 
 
 class User():
@@ -482,7 +612,6 @@ class User():
 		self, client, user
 	):
 		self.client = client
-		self.data = user
 		self.id = user['id']
 		self.name = user['username']
 		self.avatar = user['image']
@@ -493,12 +622,19 @@ class User():
 		self.full_name = user['fullName']
 		self.first_name = user['firstName']
 		self.last_name = user['lastName']
-		self.organization = user['organization']
+		organization = user['organization']
+		if organization:
+			organization = Organization(organization)
+		self.organization = organization
 		self.is_logged_in = user['isLoggedIn']
 		self.bio = user['bio']
-		subscription = Subscription(client, self, user['subscription'])
+		subscription = user['subscription']
+		if subscription:
+			subscription = Subscription(client, self, subscription)
 		self.subscription = subscription
-		self.languages = user['languages']
+		self.languages = [
+			Language(language) for language in user['languages']
+		]
 
 	def __repr__(self):
 		return f'<{self.name} ({self.cycles})>'
@@ -508,6 +644,14 @@ class User():
 
 	def __ne__(self, user2):
 		return self.id != user2.id
+
+	def __hash__(self):
+		return hash((
+			self.id,
+			self.name,
+			self.full_name,
+			self.bio
+		))
 
 
 class Leaderboards():
@@ -564,7 +708,6 @@ class Leaderboards():
 
 	def __str__(self):
 		return self.__repr__()
-
 
 
 class Client():

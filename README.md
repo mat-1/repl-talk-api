@@ -1,7 +1,8 @@
 # Examples
 ```py
 # Getting the newest posts on Repl Talk and printing their titles
-for post in # TODO BECAUSE IM LAZY
+async for post in client.boards.all.get_posts():
+	print(post.title)
 ```
 
 # API Reference
@@ -11,20 +12,20 @@ How to use the `repltalk` lib for Python. The functions are pretty self explanat
 
 ## Client
 `class repltalk.Client()`
-+ `login(username, password)`
++ `await login(username, password)`
 Logs in to Repl.it with your username and password. Your bot must be verified in order to use this function.
-+ `get_post(post_id)`
++ `await get_post(post_id)`
 Gets the post with that id. 
 *returns Post*
-+ `post_exists(post_id)`
++ `await post_exists(post_id)`
 Returns whether or not the post exists.
-+ `get_leaderboard(limit=30)`
++ `await get_leaderboard(limit=30)`
 Gets the top users from the Repl Talk leaderboard. 
 *returns list of `User`s*
-+ `get_all_comments()`
++ `await get_all_comments()`
 Gets all the recent comments from Repl Talk. 
 *returns list of `Comment`s
-+ `get_user(username)`
++ `await get_user(username)`
 Gets the user with that username. 
 *returns User*
 + `boards`
@@ -47,10 +48,10 @@ The *Challenge* board on Repl Talk.
 + `learn`
 The *Learn* board on Repl Talk.
 ***
-+ `get_posts(sort='top', search='')`
++ `async for post in get_posts(sort='top', search='')`
 Gets the most recent posts from that board.
 Sort is the sorting order (top|hot|new) and search is the search query.
-*returns PostList*
+*returns AsyncPostList*
 ### RichBoard
 A board that contains all the information from *Board*, and more.
 You can get this by doing `await client.boards.get(board_name)` (NOT YET ADDED)
@@ -66,11 +67,7 @@ Button call to action
 Whether a Repl is required to be submitted.
 
 ***
-## Post ('client', 'id', 'title', 'content', 'is_announcement', 'path', 'url', 'board',
-		'timestamp', 'can_edit', 'can_comment', 'can_pin', 'can_set_type',
-		'can_report', 'has_reported', 'is_locked', 'show_hosted', 'votes',
-		'can_vote', 'has_voted', 'author', 'repl', 'answered', 'can_answer',
-		'pinned', 'comment_count', 'language')
+## Post
 + `id`
 The post ID.
 + `title`
@@ -90,13 +87,13 @@ The post url in Repl Talk.
 + `repl`
 The repl attached to the post.
 + `language`
-The *Language* of the Repl on the post.
+The *Language* that the Repl attached to the post uses.
 + `show_hosted`
 Indicates whether the post has a hosted repl linked to it.
 + `is_announcement`
 Whether the post is marked as an announcement.
 + `pinned`
-Whether the post has been pinned to the top of the board
+Whether the post has been pinned to the top of the board.
 + `can_edit`
 Indicates if the user can edit the post. This will be *False* unless you created the post.
 + `can_comment`
@@ -110,18 +107,16 @@ Indicates if the post is locked.
 + `can_answer`
 Whether or not the user can answer the post.
 + `answered`
-If the post has been answered (will always be False if can't answer).
+If the post has been answered (will always be False if it's not a question).
 + `comment_count`
 The amount of comments the post has
-+ `get_comments()`
++ `await get_comments()`
 Gets the comments on the post.
-+ `post_comment(content)`
++ `await post_comment(content)`
 Posts a comment on the post.
 
 ***
-## Comment ('client', 'id', 'content', 'timestamp', 'can_edit', 'can_comment',
-		'can_report', 'has_reported', 'path', 'url', 'votes', 'can_vote',
-		'has_voted', 'author', 'post', 'replies', 'parent')
+## Comment
 + `id`
 The comment ID.
 + `content`
@@ -148,13 +143,11 @@ The post that the comment was made on.
 A list of replies that the comment received.
 + `parent`
 The parent comment, if any.
-+ `reply(content)`
++ `await reply(content)`
 Replies to the comment with the content.
 
 ***
-## User ('client', 'data', 'id', 'name', 'avatar', 'url', 'cycles', 'roles',
-		'full_name', 'first_name', 'last_name', 'organization', 'is_logged_in',
-		'bio', 'subscription', 'languages')
+## User
 + `id`
 The user ID. Pretty useless since you can't get the user from their id.
 + `name`
@@ -164,17 +157,27 @@ The user's avatar url.
 + `url`
 The user's profile link.
 + `cycles`
-The amount of cycles that user has.
+The amount of cycles/karma that user has.
 + `roles`
 The roles the user has set on their profile.
 + `bio` 
 The short description written by a user on their profile.
++ `organization` 
+The organization that the user is a part of. This can be None. See *Organization*
++ `subscription` 
+The subscription that the user has. This can be None. See *Subscription*
++ `first_name`
+What the user set as their first name in their profile
++ `last_name`
+What the user set as their last name in their profile
++ `languages`
+The *Language*s that the user uses most often.
 
 ***
-## PostList
+## PostList/AsyncPostList
 Acts like a normal list, except you can iterate over it
-+ `next`
-Gets the next page of posts.
++ `await next()`
+Gets the next page of posts. Not present in *AsyncPostList* because it's done automatically.
 + `board`
 Gets the board of the repls it's getting from
 
@@ -208,5 +211,15 @@ Whether the language was recently added to Repl.it.
 A short description of the language.
 
 ***
+## Organization
+The organization users are a part of
++ `name`
+The name of the organization
+
+***
 ## Subscription
-('name', 'plan_id', 'name', 'plan')
+A subscription that a user bought.
++ `name`
+The name of the subscription
++ `id`
+The id of the subscription
