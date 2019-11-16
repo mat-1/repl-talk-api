@@ -22,7 +22,7 @@ class TestReplTalk(unittest.TestCase):
 		self.assertIsNotNone(post, 'Post should not be None')
 		self.assertIsNotNone(post.board, 'Post board should not be None')
 		self.assertIsInstance(
-			post.datetime, datetime.datetime, 'Post time is a datetime object'
+			post.timestamp, datetime.datetime, 'Post time is a datetime object'
 		)
 		self.assertIsNotNone(post.author, 'Author is not None')
 		if post.repl is not None:
@@ -77,7 +77,7 @@ class TestReplTalk(unittest.TestCase):
 
 	def test_language(self):
 		post = self.run_async(self.client.get_post(13315))
-		self.assertEqual(post.language.name, 'python3')
+		self.assertEqual(post.language.id, 'python3')
 		self.assertEqual(str(post.language), 'Python')
 
 

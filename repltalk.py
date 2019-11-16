@@ -1,6 +1,6 @@
 import aiohttp
 from datetime import datetime
-import graphql
+from queries import Queries
 
 # Bots approved by the Repl.it Team that are allowed to log in
 # (100% impossible to hack yes definitely)
@@ -12,16 +12,19 @@ whitelisted_bots = {
 base_url = 'https://repl.it'
 
 
-class NotWhitelisted(Exception): pass
+class ReplTalkException(Exception): pass
 
 
-class BoardDoesntExist(Exception): pass
+class NotWhitelisted(ReplTalkException): pass
 
 
-class GraphqlError(Exception): pass
+class BoardDoesntExist(ReplTalkException): pass
 
 
-class InvalidLogin(Exception): pass
+class GraphqlError(ReplTalkException): pass
+
+
+class InvalidLogin(ReplTalkException): pass
 
 
 class Repl():
@@ -35,9 +38,10 @@ class Repl():
 		self.url = hosted_url
 		self.title = title
 		self.language = Language(
-			name=language_name,
-			display_name=language['displayName'],
-			icon=language['icon']
+			data=language
+			# name=language_name,
+			# display_name=language['displayName'],
+			# icon=language['icon']
 		)
 
 	def __repr__(self):
@@ -141,30 +145,30 @@ class CommentList(list):
 
 class Comment():
 	__slots__ = (
-		'client', 'id', 'content', 'datetime', 'can_edit', 'can_comment',
-		'can_report', 'has_reported', 'url', 'votes', 'can_vote', 'has_voted',
-		'author', 'post', 'replies', 'parent'
+		'client', 'id', 'content', 'timestamp', 'can_edit', 'can_comment',
+		'can_report', 'has_reported', 'path', 'url', 'votes', 'can_vote',
+		'has_voted', 'author', 'post', 'replies', 'parent'
 	)
 
 	def __init__(
-		self, client, id, body, time_created, can_edit,
-		can_comment, can_report, has_reported, url, votes,
-		can_vote, has_voted, user, post, comments,
-		parent=None
+		self, client, data, post, parent=None
 	):
 		self.client = client
-		self.id = id
-		self.content = body
-		self.datetime = datetime.strptime(time_created, '%Y-%m-%dT%H:%M:%S.%fZ')
-		self.can_edit = can_edit
-		self.can_comment = can_comment
-		self.can_report = can_report
-		self.has_reported = has_reported
-		self.url = base_url + url
-		self.votes = votes
-		self.can_vote = can_vote
-		self.has_voted = has_voted
+		self.id = data['id']
+		self.content = data['body']
+		timestamp = data['timeCreated']
+		self.timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ')
+		self.can_edit = data['canEdit']
+		self.can_comment = data['canComment']
+		self.can_report = data['canReport']
+		self.has_reported = data['hasReported']
+		self.path = data['url']
+		self.url = base_url + data['url']
+		self.votes = data['voteCount']
+		self.can_vote = data['canVote']
+		self.has_voted = data['hasVoted']
 		self.parent = parent
+		user = data['user']
 		if user is not None:
 			user = User(
 				client,
@@ -172,28 +176,15 @@ class Comment():
 			)
 		self.author = user
 		self.post = post  # Should already be a post object
+
+		raw_replies = data.get('comments', [])
 		replies = []
-		for c in comments:
-			try:
-				co = c['comments']
-			except KeyError:
-				co = []
+
+		for inner_reply in raw_replies:
 			replies.append(Comment(
 				self.client,
-				id=c['id'],
-				body=c['body'],
-				time_created=c['timeCreated'],
-				can_edit=c['canEdit'],
-				can_comment=c['canComment'],
-				can_report=c['canReport'],
-				has_reported=c['hasReported'],
-				url=c['url'],
-				votes=c['voteCount'],
-				can_vote=c['canVote'],
-				has_voted=c['hasVoted'],
-				user=c['user'],
+				data=inner_reply,
 				post=self.post,
-				comments=co,
 				parent=self
 			))
 		self.replies = replies
@@ -213,7 +204,7 @@ class Comment():
 	async def reply(self, content):
 		c = await self.client.perform_graphql(
 			'createComment',
-			graphql.create_comment,
+			Queries.create_comment,
 			input={
 				'body': content,
 				'commentId': self.id,
@@ -222,21 +213,10 @@ class Comment():
 		)
 		c = c['comment']
 		return Comment(
-			self,
-			id=c['id'],
-			body=c['body'],
-			time_created=c['timeCreated'],
-			can_edit=c['canEdit'],
-			can_comment=c['canComment'],
-			can_report=c['canReport'],
-			has_reported=c['hasReported'],
-			url=c['url'],
-			votes=c['voteCount'],
-			can_vote=c['canVote'],
-			has_voted=c['hasVoted'],
-			user=c['user'],
+			self.client,
+			data=c,
 			post=self.post,
-			comments=c['comments']
+			parent=self
 		)
 
 
@@ -278,11 +258,12 @@ class Board():
 			search=search
 		)
 
-	async def create_post(
+	async def create_post(  # TODO
 		self, title: str, content: str, repl: Repl = None, show_hosted=False
 	):
-		if repl:
-			repl_id = repl.id
+		pass
+		# if repl:
+		# 	repl_id = repl.id
 
 	def __repr__(self):
 		return f'<{self.name} board>'
@@ -314,13 +295,22 @@ class RichBoard(Board):  # a board with more stuff than usual
 
 
 class Language():
-	__slots__ = ('name', 'display_name', 'icon')
+	__slots__ = (
+		'id', 'display_name', 'key', 'category', 'is_new', 'icon', 'icon_path',
+		'tagline'
+	)
 
 	def __init__(
-		self, name, display_name, icon=None
+		self, data
 	):
-		self.name = name
-		self.display_name = display_name
+		self.id = data['id']
+		self.display_name = data['displayName']
+		self.key = data['key']  # identical to id???
+		self.category = data['category']
+		self.tagline = data['tagline']
+		self.is_new = data['isNew']
+		icon = data['icon']
+		self.icon_path = icon
 		if icon[0] == '/':
 			icon = 'https://repl.it' + icon
 		self.icon = icon
@@ -329,91 +319,68 @@ class Language():
 		return self.display_name
 
 	def __repr__(self):
-		return f'<{self.name}>'
+		return f'<{self.id}>'
 
 	def __eq__(self, lang2):
-		return self.name == lang2.name
+		return self.key == lang2.key
 
 	def __ne__(self, lang2):
-		return self.name != lang2.name
-
+		return self.key != lang2.key
 
 
 def get_post_object(client, post):
 	return Post(
-		client,
-		id=post['id'],
-		title=post['title'],
-		body=post['body'],
-		is_announcement=post['isAnnouncement'],
-		is_pinned=post['isPinned'],
-		comment_count=post['commentCount'],
-		url=post['url'],
-		board=post['board'],
-		time_created=post['timeCreated'],
-		can_edit=post['canEdit'],
-		can_comment=post['canComment'],
-		can_pin=post['canPin'],
-		can_set_type=post['canSetType'],
-		can_report=post['canReport'],
-		has_reported=post['hasReported'],
-		is_locked=post['isLocked'],
-		show_hosted=post['showHosted'],
-		vote_count=post['voteCount'],
-		can_vote=post['canVote'],
-		has_voted=post['hasVoted'],
-		user=post['user'],
-		repl=post['repl'],
-		is_answered=post['isAnswered'],
-		is_answerable=post['isAnswerable']
+		client, data=post
 	)
 
 
 class Post():
 	__slots__ = (
-		'client', 'id', 'title', 'content', 'is_announcement', 'url', 'board',
-		'datetime', 'can_edit', 'can_comment', 'can_pin', 'can_set_type',
+		'client', 'id', 'title', 'content', 'is_announcement', 'path', 'url',
+		'board', 'timestamp', 'can_edit', 'can_comment', 'can_pin', 'can_set_type',
 		'can_report', 'has_reported', 'is_locked', 'show_hosted', 'votes',
 		'can_vote', 'has_voted', 'author', 'repl', 'answered', 'can_answer',
 		'pinned', 'comment_count', 'language'
 	)
+
 	def __init__(
-		self, client, id, title, body, is_announcement,
-		url, board, time_created, can_edit, can_comment,
-		can_pin, can_set_type, can_report, has_reported,
-		is_locked, show_hosted, vote_count, can_vote,
-		has_voted, user, repl, is_answered, is_answerable, is_pinned, comment_count
+		self, client, data
 	):
 		self.client = client
-		self.id = id
-		self.title = title
-		self.content = body
-		self.is_announcement = is_announcement
-		self.url = base_url + url
+		self.id = data['id']
+		self.title = data['title']
+		self.content = data['body']
+		self.is_announcement = data['isAnnouncement']
+		self.path = data['url']
+		self.url = base_url + data['url']
 		board = RichBoard(
 			client=client,
-			data=board
+			data=data['board']
 		)
 		self.board = board
-		self.datetime = datetime.strptime(time_created, '%Y-%m-%dT%H:%M:%S.%fZ')
-		self.can_edit = can_edit
-		self.can_comment = can_comment
-		self.can_pin = can_pin
-		self.can_set_type = can_set_type
-		self.can_report = can_report
-		self.has_reported = has_reported
-		self.is_locked = is_locked
-		self.show_hosted = show_hosted
-		self.votes = vote_count
-		self.can_vote = can_vote
-		self.has_voted = has_voted
+		timestamp = data['timeCreated']
+		self.timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ')
+		self.can_edit = data['canEdit']
+		self.can_comment = data['canComment']
+		self.can_pin = data['canPin']
+		self.can_set_type = data['canSetType']
+		self.can_report = data['canReport']
+		self.has_reported = data['hasReported']
+		self.is_locked = data['isLocked']
+		self.show_hosted = data['showHosted']
+		self.votes = data['voteCount']
+		self.can_vote = data['canVote']
+		self.has_voted = data['hasVoted']
 
+		user = data['user']
 		if user is not None:
 			user = User(
 				client,
 				user=user
 			)
 		self.author = user
+
+		repl = data['repl']
 		if repl is None:
 			self.repl = None
 			self.language = None
@@ -428,10 +395,10 @@ class Post():
 				language=repl['lang']
 			)
 			self.language = self.repl.language
-		self.answered = is_answered
-		self.can_answer = is_answerable
-		self.pinned = is_pinned
-		self.comment_count = comment_count
+		self.answered = data['isAnswered']
+		self.can_answer = data['isAnswerable']
+		self.pinned = data['isPinned']
+		self.comment_count = data['commentCount']
 
 	def __repr__(self):
 		return f'<{self.title}>'
@@ -453,27 +420,15 @@ class Post():
 		for c in _comments['comments']['items']:
 			comments.append(Comment(
 				self.client,
-				id=c['id'],
-				body=c['body'],
-				time_created=c['timeCreated'],
-				can_edit=c['canEdit'],
-				can_comment=c['canComment'],
-				can_report=c['canReport'],
-				has_reported=c['hasReported'],
-				url=c['url'],
-				votes=c['voteCount'],
-				can_vote=c['canVote'],
-				has_voted=c['hasVoted'],
-				user=c['user'],
-				post=self,
-				comments=c['comments']
+				data=c,
+				post=self
 			))
 		return comments
 
 	async def post_comment(self, content):
 		c = await self.client.perform_graphql(
 			'createComment',
-			graphql.create_comment,
+			Queries.create_comment,
 			input={
 				'body': content,
 				'postId': self.id
@@ -482,25 +437,14 @@ class Post():
 		c = c['comment']
 		return Comment(
 			client=self.client,
-			id=c['id'],
-			body=c['body'],
-			time_created=c['timeCreated'],
-			can_edit=c['canEdit'],
-			can_comment=c['canComment'],
-			can_report=c['canReport'],
-			has_reported=c['hasReported'],
-			url=c['url'],
-			votes=c['voteCount'],
-			can_vote=c['canVote'],
-			has_voted=c['hasVoted'],
-			user=c['user'],
+			data=c,
 			post=self,
-			comments=[]
 		)
 
 
 class Subscription():
 	__slots__ = ('name', 'plan_id', 'name', 'plan')
+
 	def __init__(
 		self, client, user, subscription
 	):
@@ -528,7 +472,12 @@ class Subscription():
 
 
 class User():
-	__slots__ = ('client', 'data', 'id', 'name', 'avatar', 'url', 'cycles', 'roles', 'full_name', 'first_name', 'last_name', 'organization', 'is_logged_in', 'bio', 'subscription', 'languages')
+	__slots__ = (
+		'client', 'data', 'id', 'name', 'avatar', 'url', 'cycles', 'roles',
+		'full_name', 'first_name', 'last_name', 'organization', 'is_logged_in',
+		'bio', 'subscription', 'languages'
+	)
+
 	def __init__(
 		self, client, user
 	):
@@ -562,7 +511,10 @@ class User():
 
 
 class Leaderboards():
-	__slots__ = ('limit', 'iterated', 'users', 'raw_users', 'next_cursor', 'client')
+	__slots__ = (
+		'limit', 'iterated', 'users', 'raw_users', 'next_cursor', 'client'
+	)
+
 	def __init__(self, client, limit):
 		self.limit = limit
 		self.iterated = 0
@@ -614,353 +566,10 @@ class Leaderboards():
 		return self.__repr__()
 
 
-class graphql:
-	'There are all the graphql strings used'
-	user_attributes = [
-		'id',
-		'username',
-		'url',
-		'image',
-		'karma',
-		'firstName',
-		'lastName',
-		'fullName',
-		'displayName',
-		'isLoggedIn',
-		'bio',
-		graphql.Field({'organization': 'name'}),
-		graphql.Field({'subscription': 'planId'}),
-		graphql.Field({'languages': ('id', 'key', 'displayName', 'tagline', 'icon')}),
-		graphql.Field({'roles': ('id', 'name', 'key', 'tagline')}),
-	]
-	user_part = graphql.Field({'user': user_attributes})
-	repl_part = graphql.Field({
-		'repl': (
-			'id',
-			graphql.Alias(
-				'embedUrl',
-				graphql.Field('url', args={'lite': 'true'})
-			),
-			'hostedUrl',
-			'title',
-			{'lang': (
-				'icon',
-				'displayName'
-			)},
-			'language',
-			'timeCreated'
-		)
-	})
-	board_part = graphql.Field({
-		'board': (
-			'id',
-			'url',
-			'slug',
-			'cta',
-			'titleCta',
-			'bodyCta',
-			'buttonCta',
-			'description',
-			'name',
-			'replRequired',
-			'isLocked',
-			'isPrivate'
-		)
-	})
-	'''		fragment PostsFeedItemPost on Post {
-					id
-					title
-					preview(
-						removeMarkdown: true, length: 150
-					)
-					url
-					commentCount
-					isPinned
-					isLocked
-					isAnnouncement
-					timeCreated
-					isAnswered
-					isAnswerable
-					...PostVoteControlPost
-					...PostLinkPost
-					user {
-						id
-						username
-						isHacker
-						image
-						isModerator: hasRole(role: MODERATOR)
-						isAdmin: hasRole(role: ADMIN)
-						...UserLabelUser
-						...UserLinkUser
-					}
-					repl {
-						id
-						lang {
-							id
-							icon
-							key
-							displayName
-							tagline
-						}
-					}
-					board {
-						id
-						name
-						slug
-						url
-						color
-					}
-					recentComments(count: 3) {
-						id
-						...SimpleCommentComment
-					}
-				}
-				fragment PostVoteControlPost on Post {  id  voteCount  canVote  hasVoted  __typename}fragment PostLinkPost on Post {  id  url  __typename}fragment UserLabelUser on User {  id  username  karma  ...UserLinkUser  __typename}fragment UserLinkUser on User {  id  url  username  __typename}fragment SimpleCommentComment on Comment {  id  user {    id    isModerator: hasRole(role: MODERATOR)    isAdmin: hasRole(role: ADMIN)    ...UserLabelUser    ...UserLinkUser    __typename  }  preview(removeMarkdown: true, length: 500)  timeCreated  __typename}
-'''
-	post_part = graphql.Field((
-		'id',
-		'title',
-		'body',
-		'url',
-		'commentCount',
-		'isPinned',
-		'isLocked',
-		'isAnnouncement',
-		'timeCreated',
-		'voteCount',
-		'canVote',
-		'hasVoted',
-		board_part,
-		'canEdit',
-		'canComment',
-		'canPin',
-		'canSetType',
-		'canReport',
-		'hasReported',
-		'showHosted',
-		'isAnswered',
-		'isAnswerable',
-		graphql.Field('preview', args={'removeMarkdown': 'true', 'length': 150}),
-		repl_part,
-		user_part
-	))
-	comment_part = graphql.Field((
-		user_part,
-		'id',
-		'body',
-		'timeCreated',
-		'canEdit',
-		'canComment',
-		'canReport',
-		{'comments': {
-			'id'
-		}},
-		'hasReported',
-		'url',
-		'voteCount',
-		'canVote',
-		'hasVoted',
-		{'post': {
-			post_part
-		}}
-	))
-	create_comment = f'''
-	mutation createComment($input: CreateCommentInput!) {{
-		createComment(input: $input) {{
-			comment {{
-				...CommentDetailComment
-				comments {{
-					...CommentDetailComment
-				}}
-				parentComment {{
-					...CommentDetailComment
-				}}
-			}}
-		}}
-	}}
-
-	fragment CommentDetailComment on Comment {{
-		id
-		body
-		timeCreated
-		canEdit
-		canComment
-		canReport
-		hasReported
-		url
-		voteCount
-		canVote
-		hasVoted
-		{user_part}
-	}}
-	'''
-	get_post = f'''
-	query post($id: Int!) {{
-		post(id: $id) {{
-			{post_part}
-		}}
-	}}
-	'''
-	get_leaderboard = graphql.Query(
-		'leaderboard', {'$after': 'String'},
-		{
-			graphql.Field(args={'after': '$after'}, data={
-				'leaderboard': {
-					'pageInfo': 'nextCursor',
-					'items': user_attributes
-				}
-			})
-		}
-	)
-	# get_all_posts = f'''
-	# query posts($order: String, $after: String, $searchQuery: String) {{
-	# 	posts(order: $order, after: $after, searchQuery: $searchQuery) {{
-	# 		pageInfo {{
-	# 			nextCursor
-	# 		}}
-	# 		items {{
-	# 			{post_part}
-	# 		}}
-	# 	}}
-	# }}
-	# '''
-	posts_feed = f'''
-	query PostsFeed(
-		$order: String,
-		$after: String,
-		$searchQuery: String,
-		$languages: [String!],
-		$count: Int,
-		$boardSlugs: [String!],
-		$pinAnnouncements: Boolean,
-		$pinPinned: Boolean
-	) {{
-		posts(
-			order: $order,
-			after: $after,
-			searchQuery: $searchQuery,
-			languages: $languages,
-			count: $count,
-			boardSlugs: $boardSlugs,
-			pinAnnouncements: $pinAnnouncements,
-			pinPinned: $pinPinned
-		) {{
-			pageInfo {{
-				nextCursor
-			}}
-			items {{
-				{post_part}
-			}}
-		}}
-	}}
-	'''
-	get_comments = f'''
-	query post(
-		$id: Int!, $commentsOrder: String, $commentsAfter: String
-	) {{
-		post(id: $id) {{
-			comments(order: $commentsOrder, after: $commentsAfter) {{
-				pageInfo {{
-					nextCursor
-				}}
-				items {{
-					...CommentDetailComment
-					comments {{
-						...CommentDetailComment
-					}}
-				}}
-			}}
-		}}
-	}}
-
-	fragment CommentDetailComment on Comment {{
-		id
-		body
-		timeCreated
-		canEdit
-		canComment
-		canReport
-		hasReported
-		url
-		voteCount
-		canVote
-		hasVoted
-		{user_part}
-	}}
-
-	'''
-	# query comments($after: String, $order: String) {
-	# 	comments(after: $after, order: $order) {
-	# 		items {
-	# 			id
-	# 		}
-	# 	}
-	# }
-	# get_all_comments = f'''
-	# query comments($after: String, $order: String) {{
-	# 	comments(after: $after, order: $order) {{
-	# 		items {{
-	# 			{comment_part}
-	# 			comments {{
-	# 				{comment_part}
-	# 			}}
-	# 		}}
-	# 		pageInfo {{
-	# 			hasNextPage
-	# 			nextCursor
-	# 		}}
-	# 	}}
-	# }}
-	# '''
-	get_user = graphql.Query(
-		'userByUsername',
-		{'$username': 'String!'},
-		graphql.Alias(
-			'user',
-			graphql.Field(
-				{'userByUsername': user_attributes},
-				args={'username': '$username'}
-			)
-		)
-	)
-	# get_user = f'''
-	# query userByUsername(
-	# 	$username: String!,
-	# ) {{
-	# 	user: userByUsername(username: $username) {{
-	# 		{' '.join(user_attributes)}
-	# 	}}
-	# }}
-	# '''
-	post_exists = '''
-	query post($id: Int!) {
-		post(id: $id) { id }
-	}
-	'''
-
-	create_post = '''
-	mutation createPost($input: CreatePostInput!) {
-		createPost(input: $input) {
-			post {
-				id
-				url
-				showHosted
-				board {
-					id
-					name
-					slug
-					url
-					replRequired
-					template
-				}
-			}
-		}
-	}
-	'''
-
 
 class Client():
 	__slots__ = ('default_ref', 'default_requested_with', 'sid', 'boards')
+
 	def __init__(self):
 		self.default_ref = base_url + '/@mat1/repl-talk-api'
 		self.default_requested_with = 'ReplTalk'
@@ -1003,6 +612,10 @@ class Client():
 		keys = data.keys()
 		if len(keys) == 1:
 			data = data[next(iter(keys))]
+		if isinstance(data, list):
+			print(data)
+			loc = data[0]['locations'][0]['column']
+			print(str(query)[:loc-1] + '!!!!!' + str(query)[loc-1:])
 		return data
 
 	async def login(self, username, password):
@@ -1035,7 +648,7 @@ class Client():
 
 	async def _get_post(self, post_id):
 		post = await self.perform_graphql(
-			'post', graphql.get_post, id=int(post_id)
+			'post', Queries.get_post, id=int(post_id)
 		)
 		return post
 
@@ -1047,7 +660,7 @@ class Client():
 		if isinstance(post_id, Post):
 			post_id = post_id.id
 		post = await self.perform_graphql(
-			'post', graphql.post_exists, id=post_id
+			'post', Queries.post_exists, id=post_id
 		)
 		return post is not None
 
@@ -1055,12 +668,12 @@ class Client():
 		if cursor is None:
 			leaderboard = await self.perform_graphql(
 				'leaderboard',
-				graphql.get_leaderboard
+				Queries.get_leaderboard
 			)
 		else:
 			leaderboard = await self.perform_graphql(
 				'leaderboard',
-				graphql.get_leaderboard,
+				Queries.get_leaderboard,
 				after=cursor
 			)
 		return leaderboard
@@ -1074,7 +687,7 @@ class Client():
 		if after is None:
 			posts = await self.perform_graphql(
 				'posts',
-				graphql.get_all_posts,
+				Queries.get_all_posts,
 				order=order,
 				searchQuery=search_query
 			)
@@ -1082,7 +695,7 @@ class Client():
 		else:
 			posts = await self.perform_graphql(
 				'posts',
-				graphql.get_all_posts,
+				Queries.get_all_posts,
 				order=order,
 				searchQuery=search_query,
 				after=after
@@ -1099,7 +712,7 @@ class Client():
 	):
 		posts = await self.perform_graphql(
 			'PostsFeed',
-			graphql.posts_feed,
+			Queries.posts_feed,
 			ignore_none=True,
 			boardSlugs=board_slugs,
 			languages=languages,
@@ -1134,7 +747,7 @@ class Client():
 	async def _get_comments(self, post_id, order='new'):
 		return await self.perform_graphql(
 			'post',
-			graphql.get_comments,
+			Queries.get_comments,
 			id=post_id,
 			commentsOrder=order
 		)
@@ -1142,7 +755,7 @@ class Client():
 	# async def _get_all_comments(self, order='new'):
 	# 	return await self.perform_graphql(
 	# 		'comments',
-	# 		graphql.get_all_comments,
+	# 		Queries.get_all_comments,
 	# 		order=order
 	# 	)
 
@@ -1172,7 +785,7 @@ class Client():
 	async def _get_user(self, name):
 		user = await self.perform_graphql(
 			'userByUsername',
-			graphql.get_user,
+			Queries.get_user,
 			username=name,
 		)
 		return user
