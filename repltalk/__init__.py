@@ -1,13 +1,13 @@
 import aiohttp
 from datetime import datetime
-from queries import Queries
+from repltalk.queries import Queries
 import warnings
 
 # Bots approved by the Repl.it Team that are allowed to log in
 # (100% impossible to hack yes definitely)
 whitelisted_bots = {
 	'repltalk',
-	'replmodbot'
+	'ReplModBot'
 }
 
 base_url = 'https://repl.it'
@@ -605,7 +605,7 @@ class User():
 	__slots__ = (
 		'client', 'data', 'id', 'name', 'avatar', 'url', 'cycles', 'roles',
 		'full_name', 'first_name', 'last_name', 'organization', 'is_logged_in',
-		'bio', 'subscription', 'languages'
+		'bio', 'subscription', 'languages', 'timestamp'
 	)
 
 	def __init__(
@@ -622,6 +622,10 @@ class User():
 		self.full_name = user['fullName']
 		self.first_name = user['firstName']
 		self.last_name = user['lastName']
+		
+		time_created = user['timeCreated']
+		self.timestamp = datetime.strptime(time_created, '%Y-%m-%dT%H:%M:%S.%fZ')
+
 		organization = user['organization']
 		if organization:
 			organization = Organization(organization)

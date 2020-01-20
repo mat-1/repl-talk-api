@@ -1,4 +1,4 @@
-import graphql
+from repltalk import graphql
 
 
 class Queries:
@@ -30,6 +30,7 @@ class Queries:
 		'displayName',
 		'isLoggedIn',
 		'bio',
+		'timeCreated',
 		graphql.Field({'organization': 'name'}),
 		graphql.Field({'subscription': 'planId'}),
 		languages_field,
@@ -375,3 +376,4 @@ class Queries:
 	}
 	'''
 
+	create_comment = '''mutation createComment($input: CreateCommentInput!) { createComment(input: $input) { comment { id ...CommentDetailComment comments { id ...CommentDetailComment __typename } parentComment { id __typename } __typename } __typename } } fragment CommentDetailComment on Comment { id body timeCreated canEdit canComment canReport hasReported url canSelectAsAnswer canUnselectAsAnswer isAnswer ...CommentVoteControlComment user { id username ...DepreciatedUserLabelWithImageUser __typename } post { id isAnswerable __typename } ...EditCommentComment __typename } fragment DepreciatedUserLabelWithImageUser on User { id image ...DepreciatedUserLabelUser __typename } fragment DepreciatedUserLabelUser on User { id image username url karma __typename } fragment CommentVoteControlComment on Comment { id voteCount canVote hasVoted __typename } fragment EditCommentComment on Comment { id parentComment { id __typename } post { id __typename } __typename } '''

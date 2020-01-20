@@ -122,7 +122,7 @@ The comment ID.
 + `content`
 The comment body.
 + `timestamp`
-The time the comment was created at.
+The time the comment was created at. (datetime.datetime object)
 + `can_edit`
 Indicates if the user can edit the comment.
 + `can_comment`
@@ -172,6 +172,8 @@ What the user set as their first name in their profile
 What the user set as their last name in their profile
 + `languages`
 The *Language*s that the user uses most often.
++ `timestamp`
+The time when the user account was created. (datetime.datetime object)
 
 ***
 ## PostList/AsyncPostList
