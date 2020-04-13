@@ -28,6 +28,8 @@ Gets all the recent comments from Repl Talk.
 + `await get_user(username)`
 Gets the user with that username. 
 *returns User*
++ `await get_reports(resolved=False)`
+Gets a list of reports. Only works for moderators or admins. See *Report List*
 + `boards`
 See *Board*.
 
@@ -65,6 +67,7 @@ Body call to action
 Button call to action
 + `repl_required`
 Whether a Repl is required to be submitted.
++
 
 ***
 ## Post
@@ -110,10 +113,13 @@ Whether or not the user can answer the post.
 If the post has been answered (will always be False if it's not a question).
 + `comment_count`
 The amount of comments the post has
-+ `await get_comments()`
-Gets the comments on the post.
++ `await get_comments(order='new')`
+Gets the comments on the post with the specified sort.
 + `await post_comment(content)`
 Posts a comment on the post.
++ `await report(reason)`
+Report the post
+
 
 ***
 ## Comment
@@ -145,6 +151,8 @@ A list of replies that the comment received.
 The parent comment, if any.
 + `await reply(content)`
 Replies to the comment with the content.
++ `await report(reason)`
+Report the comment
 
 ***
 ## User
@@ -174,6 +182,11 @@ What the user set as their last name in their profile
 The *Language*s that the user uses most often.
 + `timestamp`
 The time when the user account was created. (datetime.datetime object)
++ `await get_comments(limit=30, order='new')`
+Get a list of up to 1100 of the users comments. See *Comment*
++ `await get_posts(limit=30, order='new')`
+Get a list of up to 100 of the user's posts. See *Post*
+
 
 ***
 ## PostList/AsyncPostList
@@ -225,3 +238,69 @@ A subscription that a user bought.
 The name of the subscription
 + `id`
 The id of the subscription
+
+***
+## Report List
+List of reports. *see Report* If linked post/comment is deleted is lazy report, *See lazyReport*
++ `for report in get_reports`
+Cycles through the reports, with lazy posts/comments.
++ `async for report in get_reports`
+Cycles through the reports with full posts, if there is a post.
+
+***
+## Report
+A report on a comment or post
++ `id`
+The report id
++ `type`
+The type of the report. (`'post'` or `'comment'`)
++ `reason`
+Why the report was made
++ `timestamp`
+When the report was created
++ `creator`
+Who created the report
++ `await get_attached()`
+Get the attached post/comment
+
+***
+## Lazy Report
+A less complete report
++ `id`
+The report id
++ `reason`
+Why the report was made
++ `creator`
+Who created the report
+
+***
+## Lazy Post
+A less complete post
++ `url`
+The url to the post
++ `id`
+The post's id
++ `author`
+The post's author
++ `content`
+The post's content
++ `title`
+The post's title
++ `await get_full_post()`
+Returns the full post
+
+***
+## Lazy Comment
+A less complete comment
++ `url`
+The url to the comment
++ `id`
+The comment's id
++ `author`
+The comment's author
++ `content`
+The comment's content
++ `await get_full_comment()`
+Returns the full comment
+
+

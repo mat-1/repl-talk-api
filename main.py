@@ -3,6 +3,8 @@ import repltalk
 import asyncio
 import datetime
 
+# The following code is for unit tests,
+# please read README.md for documentation
 
 class TestReplTalk(unittest.TestCase):
 	def setUp(self):
@@ -33,6 +35,12 @@ class TestReplTalk(unittest.TestCase):
 		self.assertTrue(post.board.name.istitle(), 'Board name is a title')
 		self.assertTrue(post.board.slug.islower(), 'Board slug is lowercase')
 
+	def test_deleted_post(self):
+		try:
+			post = self.run_async(self.client.get_post(0))
+		except repltalk.PostNotFound:
+			return
+
 	# def test_post_comments(self):
 	# 	comments = self.run_async(self.client.get_all_comments())
 
@@ -40,9 +48,23 @@ class TestReplTalk(unittest.TestCase):
 		post = await self.client.get_post(5599)
 		for c in await post.get_comments():
 			self.assertIsInstance(c.id, int)
+	
+	# def test_report(self):
+	# 	post = self.run_async(self.client.get_post(21533))
+	# 	self.run_async(post.report('Ignore this, just AA testing the report w/ mats repl.it API')) # its my ignore this post
 
 	def test_comments(self):
 		self.run_async(self.async_test_comments())
+
+	def test_user_comments(self):
+		user = self.run_async(self.client.get_user('mat1'))
+		comments = self.run_async(user.get_comments())
+		self.assertIsInstance(comments, list, 'Not a list of comments?')
+	
+	def test_user_posts(self):
+		user = self.run_async(self.client.get_user('mat1'))
+		posts = self.run_async(user.get_posts())
+		self.assertIsInstance(posts, list, 'Not a list of comments?')
 
 	def test_post_exists(self):
 		exists = self.run_async(self.client.post_exists(1))

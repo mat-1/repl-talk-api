@@ -3,11 +3,11 @@ from datetime import datetime
 from repltalk.queries import Queries
 import warnings
 
-# Bots approved by the Repl.it Team that are allowed to log in
+# Bots approved by the Repl.it Team (or me) that are allowed to log in
 # (100% impossible to hack yes definitely)
 whitelisted_bots = {
 	'repltalk',
-	'ReplModBot'
+	'admin@allseeingbot.com'
 }
 
 base_url = 'https://repl.it'
@@ -19,30 +19,36 @@ class ReplTalkException(Exception): pass
 class NotWhitelisted(ReplTalkException): pass
 
 
+class AlreadyReported(ReplTalkException): pass
+
+
 class BoardDoesntExist(ReplTalkException): pass
 
 
 class GraphqlError(ReplTalkException): pass
 
 
+class DeletedError(ReplTalkException): pass
+
+
 class InvalidLogin(ReplTalkException): pass
 
+
+class PostNotFound(ReplTalkException): pass
 
 class Repl():
 	__slots__ = ('id', 'embed_url', 'url', 'title', 'language')
 
 	def __init__(
-		self, id, embed_url, hosted_url, title, language, language_name
+		self, data
 	):
-		self.id = id
-		self.embed_url = embed_url
-		self.url = hosted_url
-		self.title = title
+		# Grab the attributes from the data object
+		self.id = data['id']
+		self.embed_url = data['embedUrl']
+		self.url = data['hostedUrl']
+		self.title = data['title']
 		self.language = Language(
-			data=language
-			# name=language_name,
-			# display_name=language['displayName'],
-			# icon=language['icon']
+			data['lang']
 		)
 
 	def __repr__(self):
@@ -53,6 +59,139 @@ class Repl():
 
 	def __hash__(self):
 		return hash((self.id, self.url, self.title))
+
+# A LazyPost contains more limited information about the post
+# so it doesn't include things like comments
+class LazyPost():
+	def __init__(self, client, data):
+		self.client = client
+		self.url = data['url']
+		self.id = data['id']
+		self.content = data['body']
+		self.author = User(client, data['user'])
+		self.title = data['title']
+
+	async def get_full_post(self):
+		return await self.client.get_post(self.id)
+
+# A LazyComment contains limited information about the comment,
+# so it doesn't include things like replies
+class LazyComment():
+	def __init__(self, client, data):
+		self.client = client
+		self.url = data['url']
+		self.id = data['id']
+		self.content = data['body']
+		self.author = User(client, data['user'])
+
+	
+	async def get_full_comment(self):
+		return await self.client.get_comment(self.id)
+
+
+class Report:
+	__slots__ = (
+		'id', 'reason', 'resolved', 'timestamp',
+		'creator', 'post', 'type', 'client', 'deleted'
+	)
+
+	def __init__(self, client, data):
+
+		self.id = data['id']
+		self.type = data['type']
+		self.reason = data['reason']
+		self.resolved = data['resolved']
+		self.timestamp = data['timeCreated']
+		self.creator = User(client, data['creator'])
+		self.client = client
+		self.deleted = False
+		# There are two types of reports, post reports and comment reports.
+		if data['post']:
+			self.type = 'post'
+			self.post = LazyPost(client, data['post'])
+		elif data['comment']:
+			self.type = 'comment'
+
+			self.post = LazyComment(client, data['comment'])
+		else:
+			raise DeletedError('Post is already deleted')
+	
+	def __str__(self):
+		url = self.post.url
+		if 'https://repl.it' in url:
+			url = url.replace('https://repl.it', '')
+		return f'<Report for {url}>'
+	
+	async def get_attached(self):
+		if self.type == 'post':
+			self.post = await self.post.get_full_post()
+		else:
+			self.post = await self.post.get_full_comment()
+		return self
+	
+	async def resolve(self):
+		await self.client._resolve_report(self.id)
+
+
+class LazyReport:
+	__slots__ = ('client', 'id', 'reason', 'deleted', 'creator')
+
+	def __init__(self, client, data):
+		self.client = client
+		self.id = data['id']
+		self.reason = data['reason']
+		self.creator = User(client, data['creator'])
+		self.deleted = True
+	
+	def __str__(self):
+		url = 'DELETED'
+		return f'<Report for {url}>'
+	
+	async def get_attached(self):
+		return self
+	
+	async def resolve(self):
+		await self.client._resolve_report(self.id)
+	
+	async def get_full_comment(self):
+		return await self.client._get_repor
+
+
+class ReportList():
+	__slots__ = (
+		'client', 'refresh', 'resolved', 'i'
+	)
+	reports = []
+
+	def __init__(self, client, data):
+
+		for r in data:
+			try:
+				self.reports.append(Report(client, r))
+			except DeletedError:
+				self.reports.append(LazyReport(client, r))
+
+	def __iter__(self):
+		self.i = 0
+		return self
+
+	def __next__(self):
+		
+		if self.i >= len(self.reports):
+			raise StopIteration
+		self.i += 1
+		return self.reports[self.i - 1]
+
+	def __aiter__(self):
+		self.i = 0
+		return self
+
+	async def __anext__(self):
+
+		if self.i >= len(self.reports):
+			raise StopAsyncIteration
+		self.i += 1
+		return await self.reports[self.i - 1].get_attached()
 
 
 class AsyncPostList():
@@ -232,6 +371,7 @@ class Comment():
 		self.has_voted = data['hasVoted']
 		self.parent = parent
 		user = data['user']
+
 		if user is not None:
 			user = User(
 				client,
@@ -281,6 +421,19 @@ class Comment():
 			post=self.post,
 			parent=self
 		)
+	
+	async def report(self, reason):
+		client = self.client
+		r = await client.perform_graphql(
+			'createBoardReport',
+			Queries.create_report,
+			commentId=self.id,
+			reason=reason,
+			show_errors=False
+		)
+		if not r:
+			raise AlreadyReported('This comment has already been reported by this account.')
+		return r
 
 	def __hash__(self):
 		return hash((self.id, self.content, self.votes, self.replies))
@@ -440,7 +593,7 @@ class Post():
 		'board', 'timestamp', 'can_edit', 'can_comment', 'can_pin', 'can_set_type',
 		'can_report', 'has_reported', 'is_locked', 'show_hosted', 'votes',
 		'can_vote', 'has_voted', 'author', 'repl', 'answered', 'can_answer',
-		'pinned', 'comment_count', 'language'
+		'pinned', 'comment_count', 'language', 'vote_list'
 	)
 
 	def __init__(
@@ -469,6 +622,8 @@ class Post():
 		self.is_locked = data['isLocked']
 		self.show_hosted = data['showHosted']
 		self.votes = data['voteCount']
+		self.vote_list = data['votes']['items']
+
 		self.can_vote = data['canVote']
 		self.has_voted = data['hasVoted']
 
@@ -485,15 +640,7 @@ class Post():
 			self.repl = None
 			self.language = None
 		else:
-			self.repl = Repl(
-				id=repl['id'],
-				embed_url=repl['embedUrl'],
-				hosted_url=repl['hostedUrl'],
-				title=repl['title'],
-				# language=repl['language'],
-				language_name=repl['language'],
-				language=repl['lang']
-			)
+			self.repl = Repl(repl)
 			self.language = self.repl.language
 		self.answered = data['isAnswered']
 		self.can_answer = data['isAnswerable']
@@ -508,6 +655,19 @@ class Post():
 
 	def __ne__(self, post2):
 		return self.id != post2.id
+	
+	async def report(self, reason):
+		client = self.client
+		r = await client.perform_graphql(
+			'createBoardReport',
+			Queries.create_report,
+			postId=self.id,
+			reason=reason,
+			show_errors=False
+		)
+		if not r:
+			raise AlreadyReported('This post has already been reported by this account.')
+		return r
 
 	async def get_comments(self, order='new'):
 		_comments = await self.client._get_comments(
@@ -612,6 +772,7 @@ class User():
 		self, client, user
 	):
 		self.client = client
+
 		self.id = user['id']
 		self.name = user['username']
 		self.avatar = user['image']
@@ -626,19 +787,86 @@ class User():
 		time_created = user['timeCreated']
 		self.timestamp = datetime.strptime(time_created, '%Y-%m-%dT%H:%M:%S.%fZ')
 
+		# If the user is in an organization, turn it into
+		# am Organization object
 		organization = user['organization']
 		if organization:
 			organization = Organization(organization)
 		self.organization = organization
 		self.is_logged_in = user['isLoggedIn']
 		self.bio = user['bio']
+		# If the user has a subscription, turn it into
+		# a Subscription object
 		subscription = user['subscription']
 		if subscription:
 			subscription = Subscription(client, self, subscription)
 		self.subscription = subscription
+		# Convert all of the user's frequently used
+		# languages into Language objects
 		self.languages = [
 			Language(language) for language in user['languages']
 		]
+
+	async def get_comments(self, limit=30, order='new'):
+		client = self.client
+		_comments = await client._get_user_comments(
+			self.id,
+			limit,
+			order
+		)
+		comments = []
+		if 'comments' not in _comments:
+			print('reeeeeee', _comments)
+		for c in _comments['comments']['items']:
+
+			comments.append(Comment(
+				client,
+				data=c,
+				post=c['post']['id']
+			))
+
+		return comments
+	
+	async def get_posts(self, limit=30, order='new'):
+		client = self.client
+		_posts = await client._get_user_posts(
+			self.id,
+			limit,
+			order
+		)
+
+		posts = []
+		if 'posts' not in _posts:
+			print('reeeeeee', _posts)
+		for p in _posts['posts']['items']:
+
+			posts.append(Post(
+				client,
+				data=p
+			))
+
+		return posts
+	
+	async def get_repls(
+		self, limit=30,
+		pinned_first=False,
+		before=None,
+		after=None,
+		direction=None
+	):
+		repls = await self.client._get_user_repls(
+			self,
+			limit,
+			pinned_first, before,
+			after, direction,
+		)
+		public_repls_data = repls['publicRepls']
+
+		repl_list_raw = public_repls_data['items']
+		
+		repl_list = [Repl(r) for r in repl_list_raw]
+		return repl_list
+
 
 	def __repr__(self):
 		return f'<{self.name} ({self.cycles})>'
@@ -728,6 +956,7 @@ class Client():
 		operation_name,
 		query,
 		ignore_none=False,
+		show_errors=True,
 		**variables,
 	):
 		payload = {
@@ -751,18 +980,24 @@ class Client():
 				json=payload
 			) as r:
 				data = await r.json()
+		# if query == Queries.get_user_repls:
+		# 	print(data)
 		if 'data' in data:
 			data = data['data']
 		if data is None:
-			print(await r.json())
+			if show_errors:
+				print('ERROR:', await r.json())
 			return None
 		keys = data.keys()
 		if len(keys) == 1:
 			data = data[next(iter(keys))]
 		if isinstance(data, list):
-			print(data)
-			loc = data[0]['locations'][0]['column']
-			print(str(query)[:loc-1] + '!!!!!' + str(query)[loc-1:])
+
+			try:
+				loc = data[0]['locations'][0]['column']
+				print(str(query)[:loc-1] + '!!!!!' + str(query)[loc-1:])
+			except KeyError:
+				pass
 		return data
 
 	async def login(self, username, password):
@@ -792,11 +1027,36 @@ class Client():
 				connectsid = str(dict(r.cookies)['connect.sid'].value)
 				self.sid = connectsid
 			return self
+	
+
+	async def _get_reports(self, resolved):
+		reports = await self.perform_graphql(
+			'boardReports',
+			Queries.get_reports,
+			unresolvedOnly=not resolved
+		)
+		ids = [r['id'] for r in reports if 'id' in r]
+		lazy_reports = await self.perform_graphql(
+			'boardReports',
+			Queries.get_lazy_reports,
+			unresolvedOnly=not resolved
+		)
+		for lr in lazy_reports:
+			if lr['id'] not in ids:
+				reports.append(lr)
+		return reports
+
+	
+	async def get_reports(self, resolved=False):
+		raw_data = await self._get_reports(resolved)
+		return ReportList(self, raw_data)
 
 	async def _get_post(self, post_id):
 		post = await self.perform_graphql(
-			'post', Queries.get_post, id=int(post_id)
+			'post', Queries.get_post, id=int(post_id), votesCount=100
 		)
+		if post is None:
+			raise PostNotFound(f'Post id {post_id} is invalid')
 		return post
 
 	async def get_post(self, post_id):
@@ -827,6 +1087,13 @@ class Client():
 
 	def get_leaderboard(self, limit=30):
 		return Leaderboards(self, limit)
+	
+	async def _resolve_report(self, id):
+		return await self.perform_graphql(
+			'resolveBoardReport',
+			Queries.resolve_report,
+			id=id
+		)
 
 	async def _get_all_posts(
 		self, order='new', search_query='', after=None
@@ -848,6 +1115,15 @@ class Client():
 				after=after
 			)
 			return posts
+
+	async def get_user_by_id(self, user_id):
+		return User(self, 
+			await self.perform_graphql(
+				'user',
+				Queries.get_user_by_id,
+				user_id=user_id
+			)
+		)
 
 	async def _posts_in_board(
 		self,
@@ -898,36 +1174,83 @@ class Client():
 			id=post_id,
 			commentsOrder=order
 		)
+	
+	async def _get_user_comments(self, user_id, limit, order):
 
-	# async def _get_all_comments(self, order='new'):
-	# 	return await self.perform_graphql(
-	# 		'comments',
-	# 		Queries.get_all_comments,
-	# 		order=order
-	# 	)
+		return await self.perform_graphql(
+			'user',
+			Queries.get_user_comments,
+			user_id=user_id,
+			limit=limit,
+			commentsOrder=order
+		)
+	
+	async def _get_user_posts(self, user_id, limit, order):
+		return await self.perform_graphql(
+			'user',
+			Queries.get_user_posts,
+			user_id=user_id,
+			limit=limit,
+			order=order
+		)
+	
+	async def _get_user_repls(
+		self, user, limit,
+		pinned_first, before,
+		after, direction
+	):
+		return await self.perform_graphql(
+			'user',
+			Queries.get_user_repls,
+			user_id=user.id, 
+			limit=limit,
+			pinnedFirst=pinned_first,
+			before=before,
+			after=after,
+			direction=direction
+		)
 
-	# async def get_all_comments(self, order='new'):
-	# 	_comments = await self._get_all_comments(order=order)
-	# 	comments = []
-	# 	for c in _comments['items']:
-	# 		comments.append(Comment(
-	# 			self,
-	# 			id=c['id'],
-	# 			body=c['body'],
-	# 			time_created=c['timeCreated'],
-	# 			can_edit=c['canEdit'],
-	# 			can_comment=c['canComment'],
-	# 			can_report=c['canReport'],
-	# 			has_reported=c['hasReported'],
-	# 			url=c['url'],
-	# 			votes=c['voteCount'],
-	# 			can_vote=c['canVote'],
-	# 			has_voted=c['hasVoted'],
-	# 			user=c['user'],
-	# 			post=c['post'],
-	# 			comments=c['comments']
-	# 		))
-	# 	return comments
+	async def _get_all_comments(self, order='new'):
+		return await self.perform_graphql(
+			'comments',
+			Queries.get_all_comments,
+			order=order
+		)
+
+	async def _get_comment(self, id):
+		return await self.perform_graphql(
+			'comment',
+			Queries.get_comment,
+			id=96061
+		)
+	
+	async def get_comment(self, id):
+		data = await self._get_comment(id)
+		post = await self.get_post(data['post']['id'])
+		return Comment(self, data, post)
+
+	async def get_all_comments(self, order='new'):
+		_comments = await self._get_all_comments(order=order)
+		comments = []
+		for c in _comments['items']:
+			comments.append(Comment(
+				self,
+				id=c['id'],
+				body=c['body'],
+				time_created=c['timeCreated'],
+				can_edit=c['canEdit'],
+				can_comment=c['canComment'],
+				can_report=c['canReport'],
+				has_reported=c['hasReported'],
+				url=c['url'],
+				votes=c['voteCount'],
+				can_vote=c['canVote'],
+				has_voted=c['hasVoted'],
+				user=c['user'],
+				post=c['post'],
+				comments=c['comments']
+			))
+		return comments
 
 	async def _get_user(self, name):
 		user = await self.perform_graphql(
@@ -946,3 +1269,4 @@ class Client():
 			user=user
 		)
 		return u
+
