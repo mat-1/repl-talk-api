@@ -79,7 +79,6 @@ class Field():
 	def __repr__(self):
 		return self.__str__()
 
-
 class Query():
 	def __init__(self, name, args, data, fragments=[]):
 		self.field = Field({name: data}, args=args)

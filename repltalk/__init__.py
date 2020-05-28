@@ -357,7 +357,10 @@ class Comment():
 	):
 		self.client = client
 		self.id = data['id']
-		self.content = data['body']
+		self.content = data.get('body')
+		if self.content is None:
+			print(data)
+			return
 		timestamp = data['timeCreated']
 		self.timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ')
 		self.can_edit = data['canEdit']

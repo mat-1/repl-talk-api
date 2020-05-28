@@ -83,11 +83,8 @@ class Queries:
 			),
 			'items': attributes
 		})
-	# print(connection_generator('hi'))
-	# exit()
 
 	comment_attributes = graphql.Field((
-		# user_field,
 		'id',
 		'body',
 		'voteCount',
@@ -391,22 +388,40 @@ class Queries:
 		})
 	)
 
+# query ProfileComments($username: String!, $after: String, $order: String) {
+#   user: userByUsername(username: $username) {
+#     id
+#     displayName
+#     comments(after: $after, order: $order) {
+#       items {
+#         id
+#         ...ProfileCommentsComment
+#         __typename
+#       }
+#       pageInfo {
+#         nextCursor
+#         __typename
+#       }
+#       __typename
+#     }
+#     __typename
+#   }
+# }
+
 	get_user_comments = graphql.Query(
-		'user',
-		{'$user_id': 'Int!', '$commentsOrder': 'String', '$commentsAfter': 'String', '$count': 'Int'},
+		'ProfileComments',
+		{'$user_id': 'Int!', '$order': 'String', '$after': 'String', '$count': 'Int'},
 		graphql.Field('user', args={'id': '$user_id'},
-		data={
-			graphql.Field(
-				'comments',
-				args={'order': '$commentsOrder', 'after': '$commentsAfter', 'count': '$count'},
-				data={
-					'BoardReport': graphql.Field(
-						'BoardReport',
-						graphql.Field
-					)
-				}
-			)
-		})
+			data={
+				graphql.Field(
+					'user',
+					{'order': '$order', 'after': '$after', 'count': '$count'},
+					data={
+						'comments': connection_generator(comment_attributes)
+					}
+				)
+			}
+		)
 	)
 
 	
