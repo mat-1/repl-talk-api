@@ -7,7 +7,8 @@ import warnings
 # (100% impossible to hack yes definitely)
 whitelisted_bots = {
 	'repltalk',
-	'admin@allseeingbot.com'
+	'admin@allseeingbot.com',
+	'r4idtheweb'
 }
 
 base_url = 'https://repl.it'
