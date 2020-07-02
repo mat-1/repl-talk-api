@@ -360,7 +360,6 @@ class Comment():
 		self.id = data['id']
 		self.content = data.get('body')
 		if self.content is None:
-			print(data)
 			return
 		timestamp = data['timeCreated']
 		self.timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -679,8 +678,6 @@ class Post():
 			order
 		)
 		comments = []
-		if 'comments' not in _comments:
-			print('reeeeeee', _comments)
 		for c in _comments['comments']['items']:
 			comments.append(Comment(
 				self.client,
@@ -819,8 +816,6 @@ class User():
 			order
 		)
 		comments = []
-		if 'comments' not in _comments:
-			print('reeeeeee', _comments)
 		for c in _comments['comments']['items']:
 
 			comments.append(Comment(
@@ -840,8 +835,6 @@ class User():
 		)
 
 		posts = []
-		if 'posts' not in _posts:
-			print('reeeeeee', _posts)
 		for p in _posts['posts']['items']:
 
 			posts.append(Post(
@@ -984,8 +977,6 @@ class Client():
 				json=payload
 			) as r:
 				data = await r.json()
-		# if query == Queries.get_user_repls:
-		# 	print(data)
 		if 'data' in data:
 			data = data['data']
 		if data is None:
@@ -1182,7 +1173,7 @@ class Client():
 	async def _get_user_comments(self, user_id, limit, order):
 
 		return await self.perform_graphql(
-			'user',
+			'ProfileComments',
 			Queries.get_user_comments,
 			user_id=user_id,
 			limit=limit,

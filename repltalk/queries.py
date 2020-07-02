@@ -113,6 +113,7 @@ class Queries:
 			}
 		)
 	))
+
 	comment_connection_field = graphql.Field(
 		'comments',
 		args={
@@ -122,6 +123,7 @@ class Queries:
 		},
 		data=connection_generator(comment_attributes)
 	)
+	
 	post_vote_connection = graphql.Field(
 		graphql.Field(
 			'votes',
@@ -414,17 +416,14 @@ class Queries:
 		graphql.Field('user', args={'id': '$user_id'},
 			data={
 				graphql.Field(
-					'user',
-					{'order': '$order', 'after': '$after', 'count': '$count'},
-					data={
-						'comments': connection_generator(comment_attributes)
-					}
+					'comments',
+					args={'order': '$order', 'after': '$after', 'count': '$count'},
+					data=connection_generator(comment_attributes)
 				)
 			}
 		)
 	)
 
-	
 	get_user_posts = graphql.Query(
 		'user',
 		{
