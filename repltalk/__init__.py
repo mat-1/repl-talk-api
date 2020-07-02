@@ -1141,7 +1141,7 @@ class Client():
 		return posts
 
 	class _boards:
-		board_names = ['all', 'announcements', 'challenge', 'ask', 'learn', 'share']
+		board_names = ['all', 'announcements', 'challenge', 'ask', 'learn', 'share', 'templates', 'tutorials']
 		__slots__ = ['client', ] + board_names
 		for board in board_names:
 			locals()['_' + board] = type(
@@ -1161,6 +1161,8 @@ class Client():
 			self.ask = self._ask(client)
 			self.learn = self._learn(client)
 			self.share = self._share(client)
+			self.templates = self._templates(client)
+			self.tutorials = self._tutorials(client)
 
 	async def _get_comments(self, post_id, order='new'):
 		return await self.perform_graphql(
