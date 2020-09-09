@@ -109,5 +109,4 @@ class TestReplTalk(unittest.TestCase):
 	def test_async_for_posts(self):
 		self.run_async(self.async_test_async_for_posts())
 
-
 unittest.main()
