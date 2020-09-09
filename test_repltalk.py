@@ -60,7 +60,7 @@ class TestReplTalk(unittest.TestCase):
 	
 	def test_user_posts(self):
 		user = self.run_async(self.client.get_user('mat1'))
-		
+
 		# posts = self.run_async(user.get_posts())
 		# self.assertIsInstance(posts, list, 'Not a list of comments?')
 
@@ -110,4 +110,5 @@ class TestReplTalk(unittest.TestCase):
 	def test_async_for_posts(self):
 		self.run_async(self.async_test_async_for_posts())
 
-unittest.main()
+if __name__ == '__main__':
+	unittest.main()
