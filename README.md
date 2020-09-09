@@ -113,8 +113,8 @@ Whether or not the user can answer the post.
 If the post has been answered (will always be False if it's not a question).
 + `comment_count`
 The amount of comments the post has
-+ `await get_comments(order='new')`
-Gets the comments on the post with the specified sort.
++ `await get_comments()`
+Gets the comments on the post.
 + `await post_comment(content)`
 Posts a comment on the post.
 + `await report(reason)`

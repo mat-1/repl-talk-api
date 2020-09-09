@@ -8,7 +8,8 @@ import warnings
 whitelisted_bots = {
 	'repltalk',
 	'admin@allseeingbot.com',
-	'r4idtheweb'
+	'r4idtheweb',
+	'replpedia'
 }
 
 base_url = 'https://repl.it'
