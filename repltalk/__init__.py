@@ -9,7 +9,8 @@ whitelisted_bots = {
 	'repltalk',
 	'admin@allseeingbot.com',
 	'r4idtheweb',
-	'replpedia'
+	'replpedia',
+	'codingcactus'
 }
 
 base_url = 'https://repl.it'
