@@ -6,6 +6,7 @@ import datetime
 # The following code is for unit tests,
 # please read README.md for documentation
 
+
 class TestReplTalk(unittest.TestCase):
 	def setUp(self):
 		self.client = repltalk.Client()
@@ -34,9 +35,10 @@ class TestReplTalk(unittest.TestCase):
 
 	def test_deleted_post(self):
 		try:
-			post = self.run_async(self.client.get_post(0))
+			self.run_async(self.client.get_post(0))
 		except repltalk.PostNotFound:
 			return
+		raise Exception('Deleted post did not raise PostNotFound')
 
 	# def test_post_comments(self):
 	# 	comments = self.run_async(self.client.get_all_comments())
@@ -45,7 +47,7 @@ class TestReplTalk(unittest.TestCase):
 		post = await self.client.get_post(5599)
 		for c in await post.get_comments():
 			self.assertIsInstance(c.id, int)
-	
+
 	# def test_report(self):
 	# 	post = self.run_async(self.client.get_post(21533))
 	# 	self.run_async(post.report('Ignore this, just AA testing the report w/ mats repl.it API')) # its my ignore this post
@@ -57,12 +59,12 @@ class TestReplTalk(unittest.TestCase):
 		user = self.run_async(self.client.get_user('mat1'))
 		comments = self.run_async(user.get_comments())
 		self.assertIsInstance(comments, list, 'Not a list of comments?')
-	
-	def test_user_posts(self):
-		user = self.run_async(self.client.get_user('mat1'))
+
+	# def test_user_posts(self):
+		# user = self.run_async(self.client.get_user('mat1'))
 
 		# posts = self.run_async(user.get_posts())
-		# self.assertIsInstance(posts, list, 'Not a list of comments?')
+		# self.assertIsInstance(posts, list, 'Not a list of posts?')
 
 	def test_post_exists(self):
 		exists = self.run_async(self.client.post_exists(1))
@@ -88,7 +90,8 @@ class TestReplTalk(unittest.TestCase):
 		self.run_async(self.async_test_leaderboards())
 
 	async def async_test_get_new_posts(self):
-		await self.client.boards.all.get_posts(sort='new')
+		async for post in self.client.boards.all.get_posts(sort='new'):
+			pass
 
 	def test_get_new_posts(self):
 		self.run_async(self.async_test_get_new_posts())
@@ -109,6 +112,7 @@ class TestReplTalk(unittest.TestCase):
 
 	def test_async_for_posts(self):
 		self.run_async(self.async_test_async_for_posts())
+
 
 if __name__ == '__main__':
 	unittest.main()
