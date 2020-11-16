@@ -706,6 +706,9 @@ class Post():
 			data=c,
 			post=self,
 		)
+	
+	async def get_full_post(self):
+		return await self.client.get_post(self.id)
 
 	def __hash__(self):
 		return hash((
