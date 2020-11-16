@@ -39,6 +39,7 @@ class InvalidLogin(ReplTalkException): pass
 
 class PostNotFound(ReplTalkException): pass
 
+
 class Repl():
 	__slots__ = ('id', 'embed_url', 'url', 'title', 'language')
 
@@ -63,6 +64,7 @@ class Repl():
 	def __hash__(self):
 		return hash((self.id, self.url, self.title))
 
+
 # A LazyPost contains more limited information about the post
 # so it doesn't include things like comments
 class LazyPost():
@@ -81,6 +83,7 @@ class LazyPost():
 	async def get_full_post(self):
 		return await self.client.get_post(self.id)
 
+
 # A LazyComment contains limited information about the comment,
 # so it doesn't include things like replies
 class LazyComment():
@@ -91,7 +94,6 @@ class LazyComment():
 		self.content = data['body']
 		self.author = User(client, data['user'])
 
-	
 	async def get_full_comment(self):
 		return await self.client.get_comment(self.id)
 
@@ -122,13 +124,13 @@ class Report:
 			self.post = LazyComment(client, data['comment'])
 		else:
 			raise DeletedError('Post is already deleted')
-	
+
 	def __str__(self):
 		url = self.post.url
 		if 'https://repl.it' in url:
 			url = url.replace('https://repl.it', '')
 		return f'<Report for {url}>'
-	
+
 	async def get_attached(self):
 		if isinstance(self.post, (LazyPost, LazyComment)):
 			if self.type == 'post':
@@ -150,17 +152,17 @@ class LazyReport:
 		self.reason = data['reason']
 		self.creator = User(client, data['creator'])
 		self.deleted = True
-	
+
 	def __str__(self):
 		url = 'DELETED'
 		return f'<Report for {url}>'
-	
+
 	async def get_attached(self):
 		return self
-	
+
 	async def resolve(self):
 		await self.client._resolve_report(self.id)
-	
+
 	async def get_full_comment(self):
 		return await self.client._get_repor
 
@@ -184,7 +186,6 @@ class ReportList():
 		return self
 
 	def __next__(self):
-		
 		if self.i >= len(self.reports):
 			raise StopIteration
 		self.i += 1
@@ -195,7 +196,6 @@ class ReportList():
 		return self
 
 	async def __anext__(self):
-
 		if self.i >= len(self.reports):
 			raise StopAsyncIteration
 		self.i += 1
@@ -431,7 +431,7 @@ class Comment():
 			post=self.post,
 			parent=self
 		)
-	
+
 	async def report(self, reason):
 		client = self.client
 		r = await client.perform_graphql(
@@ -645,7 +645,7 @@ class Post():
 
 	def __ne__(self, post2):
 		return self.id != post2.id
-	
+
 	async def report(self, reason):
 		client = self.client
 		r = await client.perform_graphql(
@@ -772,7 +772,7 @@ class User():
 		self.full_name = user['fullName']
 		self.first_name = user['firstName']
 		self.last_name = user['lastName']
-		
+
 		time_created = user['timeCreated']
 		self.timestamp = datetime.strptime(time_created, '%Y-%m-%dT%H:%M:%S.%fZ')
 
@@ -813,7 +813,7 @@ class User():
 			))
 
 		return comments
-	
+
 	async def get_posts(self, limit=30, order='new'):
 		client = self.client
 		_posts = await client._get_user_posts(
@@ -831,7 +831,7 @@ class User():
 			))
 
 		return posts
-	
+
 	async def get_repls(
 		self, limit=30,
 		pinned_first=False,
@@ -848,10 +848,9 @@ class User():
 		public_repls_data = repls['publicRepls']
 
 		repl_list_raw = public_repls_data['items']
-		
+
 		repl_list = [Repl(r) for r in repl_list_raw]
 		return repl_list
-
 
 	def __repr__(self):
 		return f'<{self.name} ({self.cycles})>'
@@ -1010,7 +1009,6 @@ class Client():
 				connectsid = str(dict(r.cookies)['connect.sid'].value)
 				self.sid = connectsid
 			return self
-	
 
 	async def _get_reports(self, resolved):
 		reports = await self.perform_graphql(
@@ -1029,7 +1027,6 @@ class Client():
 				reports.append(lr)
 		return reports
 
-	
 	async def get_reports(self, resolved=False):
 		raw_data = await self._get_reports(resolved)
 		return ReportList(self, raw_data)
@@ -1070,7 +1067,7 @@ class Client():
 
 	def get_leaderboard(self, limit=30):
 		return Leaderboards(self, limit)
-	
+
 	async def _resolve_report(self, id):
 		return await self.perform_graphql(
 			'resolveBoardReport',
@@ -1100,7 +1097,8 @@ class Client():
 			return posts
 
 	async def get_user_by_id(self, user_id):
-		return User(self, 
+		return User(
+			self,
 			await self.perform_graphql(
 				'user',
 				Queries.get_user_by_id,
@@ -1159,7 +1157,7 @@ class Client():
 			id=post_id,
 			commentsOrder=order
 		)
-	
+
 	async def _get_user_comments(self, user_id, limit, order):
 
 		return await self.perform_graphql(
@@ -1169,7 +1167,7 @@ class Client():
 			limit=limit,
 			commentsOrder=order
 		)
-	
+
 	async def _get_user_posts(self, user_id, limit, order):
 		return await self.perform_graphql(
 			'user',
@@ -1178,7 +1176,7 @@ class Client():
 			limit=limit,
 			order=order
 		)
-	
+
 	async def _get_user_repls(
 		self, user, limit,
 		pinned_first, before,
@@ -1187,7 +1185,7 @@ class Client():
 		return await self.perform_graphql(
 			'user',
 			Queries.get_user_repls,
-			user_id=user.id, 
+			user_id=user.id,
 			limit=limit,
 			pinnedFirst=pinned_first,
 			before=before,
@@ -1208,7 +1206,7 @@ class Client():
 			Queries.get_comment,
 			id=96061
 		)
-	
+
 	async def get_comment(self, id):
 		data = await self._get_comment(id)
 		post = await self.get_post(data['post']['id'])
@@ -1254,4 +1252,3 @@ class Client():
 			user=user
 		)
 		return u
-
