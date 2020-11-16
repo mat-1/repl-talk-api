@@ -126,11 +126,12 @@ class Report:
 		return f'<Report for {url}>'
 	
 	async def get_attached(self):
-		if self.type == 'post':
-			self.post = await self.post.get_full_post()
-		else:
-			self.post = await self.post.get_full_comment()
-		return self
+		if isinstance(self.post, (LazyPost, LazyComment)):
+			if self.type == 'post':
+				self.post = await self.post.get_full_post()
+			else:
+				self.post = await self.post.get_full_comment()
+		return self.post
 	
 	async def resolve(self):
 		await self.client._resolve_report(self.id)
