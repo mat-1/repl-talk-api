@@ -66,8 +66,12 @@ class Repl():
 # A LazyPost contains more limited information about the post
 # so it doesn't include things like comments
 class LazyPost():
+	__slots__ = ('client', 'data', 'url', 'id', 'content', 'author', 'title')
+
 	def __init__(self, client, data):
 		self.client = client
+		self.data = data
+
 		self.url = data['url']
 		self.id = data['id']
 		self.content = data['body']
@@ -104,7 +108,7 @@ class Report:
 		self.type = data['type']
 		self.reason = data['reason']
 		self.resolved = data['resolved']
-		self.timestamp = data['timeCreated']
+		self.timestamp = data['timeCreated']  # Should this be parsed? if so, fix test_report_get_attached test
 		self.creator = User(client, data['creator'])
 		self.client = client
 		self.deleted = False
@@ -474,35 +478,11 @@ class Board():
 			after=after,
 			board=self
 		)
-		# return post_list.ainit(
-		# 	posts=posts,
-		# 	board=self,
-		# 	after=_posts['pageInfo']['nextCursor'],
-		# 	sort=sort,
-		# 	search=search
-		# )
-		# _posts_func = self._get_posts(
-		# 	sort=sort,
-		# 	search=search,
-		# 	after=after
-		# )
-		# posts = []
-		# if 'items' not in _posts:
-		# 	raise KeyError(f'items not in _posts. {_posts}')
-		# for post in _posts['items']:
-		# 	posts.append(
-		# 		get_post_object(self.client, post)
-		# 	)
-
-		# return PostList(
-		# )
 
 	async def create_post(  # TODO
 		self, title: str, content: str, repl: Repl = None, show_hosted=False
 	):
 		pass
-		# if repl:
-		# 	repl_id = repl.id
 
 	def __repr__(self):
 		return f'<{self.name} board>'
@@ -514,13 +494,15 @@ class Board():
 class RichBoard(Board):  # a board with more stuff than usual
 	__slots__ = (
 		'client', 'id', 'url', 'name', 'slug', 'title_cta', 'body_cta',
-		'button_cta', 'name', 'repl_required'
+		'button_cta', 'name', 'repl_required', 'data'
 	)
 
 	def __init__(
 		self, client, data
 	):
 		self.client = client
+		self.data = data
+
 		self.id = data['id']
 		self.url = base_url + data['url']
 		self.name = data['name']
@@ -602,13 +584,15 @@ class Post():
 		'board', 'timestamp', 'can_edit', 'can_comment', 'can_pin', 'can_set_type',
 		'can_report', 'has_reported', 'is_locked', 'show_hosted', 'votes',
 		'can_vote', 'has_voted', 'author', 'repl', 'answered', 'can_answer',
-		'pinned', 'comment_count', 'language', 'vote_list'
+		'pinned', 'comment_count', 'language', 'vote_list', 'data'
 	)
 
 	def __init__(
 		self, client, data
 	):
 		self.client = client
+		self.data = data
+
 		self.id = data['id']
 		self.title = data['title']
 		self.content = data['body']
@@ -772,13 +756,14 @@ class User():
 	__slots__ = (
 		'client', 'data', 'id', 'name', 'avatar', 'url', 'cycles', 'roles',
 		'full_name', 'first_name', 'last_name', 'organization', 'is_logged_in',
-		'bio', 'subscription', 'languages', 'timestamp'
+		'bio', 'subscription', 'languages', 'timestamp', 'data'
 	)
 
 	def __init__(
 		self, client, user
 	):
 		self.client = client
+		self.data = user
 
 		self.id = user['id']
 		self.name = user['username']
