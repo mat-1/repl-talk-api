@@ -1,6 +1,49 @@
 from repltalk import graphql
 
+# query: query post($id: Int!, $after: String) {
+#   post(id: $id) {
+#     ...PostVotesVotes
+#     __typename
+#   }
+# }
 
+# fragment PostVotesVotes on Post {
+#   id
+#   voteCount
+#   votes(after: $after) {
+#     items {
+#       id
+#       user {
+#         ...DepreciatedUserLabelWithImageUser
+#         __typename
+#       }
+#       __typename
+#     }
+#     pageInfo {
+#       hasNextPage
+#       nextCursor
+#       __typename
+#     }
+#     __typename
+#   }
+#   __typename
+# }
+
+# fragment DepreciatedUserLabelWithImageUser on User {
+#   id
+#   image
+#   ...DepreciatedUserLabelUser
+#   __typename
+# }
+
+# fragment DepreciatedUserLabelUser on User {
+#   id
+#   image
+#   username
+#   url
+#   karma
+#   __typename
+# }
 
 class Queries:
 	'There are all the graphql strings used'
@@ -20,8 +63,6 @@ class Queries:
 		'languages': language_attributes
 	})
 
-
-	
 	user_attributes = graphql.Field((
 		'id',
 		'username',
@@ -123,7 +164,7 @@ class Queries:
 		},
 		data=connection_generator(comment_attributes)
 	)
-	
+
 	post_vote_connection = graphql.Field(
 		graphql.Field(
 			'votes',
@@ -413,7 +454,9 @@ class Queries:
 	get_user_comments = graphql.Query(
 		'ProfileComments',
 		{'$user_id': 'Int!', '$order': 'String', '$after': 'String', '$count': 'Int'},
-		graphql.Field('user', args={'id': '$user_id'},
+		graphql.Field(
+			'user',
+			args={'id': '$user_id'},
 			data={
 				graphql.Field(
 					'comments',
@@ -437,23 +480,26 @@ class Queries:
 			'$votesOrder': 'String',
 			'$votesDirection': 'String'
 		},
-		graphql.Field('user', args={'id': '$user_id'}, data={
-			graphql.Field(
-				'posts',
-				args={
-					'order': '$order',
-					'after': '$after',
-					'count': '$count'
-				},
-				data={
-					'pageInfo': 'nextCursor',
-					'items': (
-						post_attributes
-					)
-				}
-			)
-		}
-	)
+		graphql.Field(
+			'user',
+			args={'id': '$user_id'},
+			data={
+				graphql.Field(
+					'posts',
+					args={
+						'order': '$order',
+						'after': '$after',
+						'count': '$count'
+					},
+					data={
+						'pageInfo': 'nextCursor',
+						'items': (
+							post_attributes
+						)
+					}
+				)
+			}
+		)
 	)
 	report_attributes = graphql.Field(
 		{'creator': user_attributes},
