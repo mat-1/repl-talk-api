@@ -199,7 +199,8 @@ class ReportList():
 		if self.i >= len(self.reports):
 			raise StopAsyncIteration
 		self.i += 1
-		return await self.reports[self.i - 1].get_attached()
+		await self.reports[self.i - 1].get_attached()
+		return self.reports[self.i - 1]
 
 
 class AsyncPostList():
