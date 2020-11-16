@@ -40,17 +40,10 @@ class TestReplTalk(unittest.TestCase):
 			return
 		raise Exception('Deleted post did not raise PostNotFound')
 
-	# def test_post_comments(self):
-	# 	comments = self.run_async(self.client.get_all_comments())
-
 	async def async_test_comments(self):
 		post = await self.client.get_post(5599)
 		for c in await post.get_comments():
 			self.assertIsInstance(c.id, int)
-
-	# def test_report(self):
-	# 	post = self.run_async(self.client.get_post(21533))
-	# 	self.run_async(post.report('Ignore this, just AA testing the report w/ mats repl.it API')) # its my ignore this post
 
 	def test_comments(self):
 		self.run_async(self.async_test_comments())
@@ -59,12 +52,6 @@ class TestReplTalk(unittest.TestCase):
 		user = self.run_async(self.client.get_user('mat1'))
 		comments = self.run_async(user.get_comments())
 		self.assertIsInstance(comments, list, 'Not a list of comments?')
-
-	# def test_user_posts(self):
-		# user = self.run_async(self.client.get_user('mat1'))
-
-		# posts = self.run_async(user.get_posts())
-		# self.assertIsInstance(posts, list, 'Not a list of posts?')
 
 	def test_post_exists(self):
 		exists = self.run_async(self.client.post_exists(1))
@@ -112,6 +99,102 @@ class TestReplTalk(unittest.TestCase):
 
 	def test_async_for_posts(self):
 		self.run_async(self.async_test_async_for_posts())
+
+	def make_example_user(self, override={}):
+		data = {
+			'id': '747811',
+			'username': 'mat1',
+			'image': None,
+			'url': 'https://repl.it/@mat1',
+			'karma': 1000,
+			'roles': [],
+			'fullName': 'mat',
+			'firstName': 'mat',
+			'lastName': ' ',
+			'timeCreated': '2000-1-01T01:01:00.000Z',
+			'organization': None,
+			'isLoggedIn': False,
+			'bio': 'I do dev. https://matdoes.dev',
+			'subscription': None,
+			'languages': []
+		}
+		data.update(override)
+		return repltalk.User(self.client, data)
+
+	def make_example_board(self, rich=True):
+		return repltalk.RichBoard(self.client, {
+			'id': 14,
+			'url': '/talk/announcements',
+			'name': 'Announcements',
+			'slug': 'announcements',
+			'body_cta': None,
+			'title_cta': None,
+			'button_cta': 'Post an update'
+		})
+
+	def make_example_post(self, lazy=False):
+		if lazy:
+			return repltalk.LazyPost(self.client, {
+				'id': '22109',
+				'title': 'Repl Talk Rules and Guidelines [README]',
+				'url': '/talk/announcements/Repl-Talk-Rules-and-Guidelines-README/22109',
+				'body': None,
+				'user': self.make_example_user().data,
+			})
+		else:
+			return repltalk.Post(self.client, {
+				'id': '22109',
+				'title': 'Repl Talk Rules and Guidelines [README]',
+				'body': 'Rules',
+				'isAnnouncement': True,
+				'url': '/talk/announcements/Repl-Talk-Rules-and-Guidelines-README/22109',
+				'board': self.make_example_board().data,
+				'timeCreated': '2000-1-01T01:01:00.000Z',
+				'canEdit': False,
+				'canComment': True,
+				'canPin': False,
+				'canSetType': False,
+				'canReport': True,
+				'hasReported': False,
+				'isLocked': False,
+				'showHosted': False,
+				'voteCount': 100,
+				'votes': {
+					'items': []
+				},
+				'canVote': True,
+				'hasVoted': False,
+				'user': self.make_example_user().data,
+				'repl': None,
+				'isAnswered': False,
+				'isAnswerable': False,
+				'isPinned': True,
+				'commentCount': 100
+			})
+
+	def make_example_report(self):
+		return repltalk.Report(self.client, {
+			'id': 1,
+			'type': 'post',
+			'reason': 'Report reason',
+			'resolved': False,
+			'timeCreated': None,
+			'creator': self.make_example_user().data,
+			'post': self.make_example_post(lazy=True).data
+		})
+
+
+	async def async_test_report_get_attached(self):
+		print('making example report')
+		report = self.make_example_report()
+		assert isinstance(report.post, repltalk.LazyPost)
+		await report.get_attached()
+		assert isinstance(report.post, repltalk.Post)
+		await report.get_attached()
+		assert isinstance(report.post, repltalk.Post)
+
+	def test_report_get_attached(self):
+		self.run_async(self.async_test_report_get_attached())
 
 
 if __name__ == '__main__':
