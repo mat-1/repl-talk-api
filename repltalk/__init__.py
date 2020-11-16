@@ -445,9 +445,6 @@ class Comment():
 			raise AlreadyReported('This comment has already been reported by this account.')
 		return r
 	
-	async def get_full_comment(self):
-		return await self.client.get_comment(self.id)
-	
 	def __hash__(self):
 		return hash((self.id, self.content, self.votes, self.replies))
 
