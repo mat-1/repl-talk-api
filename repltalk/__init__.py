@@ -169,12 +169,11 @@ class LazyReport:
 
 class ReportList():
 	__slots__ = (
-		'client', 'refresh', 'resolved', 'i'
+		'client', 'refresh', 'resolved', 'reports', 'i'
 	)
-	reports = []
 
 	def __init__(self, client, data):
-
+		self.reports = []
 		for r in data:
 			try:
 				self.reports.append(Report(client, r))
