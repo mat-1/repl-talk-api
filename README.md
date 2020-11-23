@@ -4,7 +4,6 @@
 async for post in client.boards.all.get_posts():
 	print(post.title)
 ```
-
 # API Reference
 How to use the `repltalk` lib for Python. The functions are pretty self explanatory but I've added a short description for each of them.
 ***
