@@ -982,33 +982,9 @@ class Client():
 				pass
 		return data
 
-	async def login(self, username, password):
-		if username.lower() not in whitelisted_bots:
-			raise NotWhitelisted(
-				f'{username} is not whitelisted and therefore is not allowed to log in.\n'
-				'Please ask mat#6207 if you would like to be added to the whitelist.'
-			)
-
-		async with aiohttp.ClientSession(
-			headers={'referer': self.default_ref}
-		) as s:
-			async with s.post(
-				base_url + '/login',
-				json={
-					'username': username,
-					'password': password,
-					'teacher': False
-				},
-				headers={
-					'X-Requested-With': username
-				}
-			) as r:
-				if await r.text() == '{"message":"Invalid username or password."}':
-					raise InvalidLogin('Invalid username or password.')
-				# Gets the connect.sid cookie
-				connectsid = str(dict(r.cookies)['connect.sid'].value)
-				self.sid = connectsid
-			return self
+	async def login(self, connectsid):
+		self.sid = connectsid
+		return self
 
 	async def _get_reports(self, resolved):
 		reports = await self.perform_graphql(
