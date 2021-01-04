@@ -17,6 +17,9 @@ Logs in to Repl.it with your username and password. Your bot must be verified in
 + `await get_post(post_id)`
 Gets the post with that id. 
 *returns Post*
++ `await get_comment(comment_id)`
+Gets the comment with that id. 
+*returns Comment*
 + `await post_exists(post_id)`
 Returns whether or not the post exists.
 + `await get_leaderboard(limit=30)`
