@@ -1204,7 +1204,7 @@ class Client():
 		return await self.perform_graphql(
 			'comment',
 			Queries.get_comment,
-			id=96061
+			id=id
 		)
 
 	async def get_comment(self, id):
