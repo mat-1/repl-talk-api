@@ -515,6 +515,26 @@ class Queries:
 			}
 		)
 	)
+	
+	ban_user = '''
+	mutation Mutation($user: String!, $reason: String) {
+		clui {
+			moderator {
+				user {
+					ban(user: $user, reason: $reason) {
+						...CluiOutput
+						__typename
+					}
+					__typename
+				}
+				__typename
+			}
+			__typename
+		}
+	}
+	'''
+		
+	
 	report_attributes = graphql.Field(
 		{'creator': user_attributes},
 		'id',
