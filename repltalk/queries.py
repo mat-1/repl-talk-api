@@ -276,6 +276,20 @@ class Queries:
 			})
 		}
 	)
+	
+	delete_post = graphql.Mutation(
+		'deletePost',
+		{
+			'$id': 'Int!'
+		},
+		graphql.Field(
+			'deletePost',
+			args={'id': '$id'},
+			data=post_attributes
+		)
+	)
+	
+	'''
 	# get_all_posts = f'''
 	# query posts($order: String, $after: String, $searchQuery: String) {{
 	# 	posts(order: $order, after: $after, searchQuery: $searchQuery) {{
