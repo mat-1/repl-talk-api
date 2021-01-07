@@ -122,6 +122,8 @@ Gets the comments on the post.
 Posts a comment on the post.
 + `await report(reason)`
 Report the post
++ `await delete()`
+Delete the Post
 
 
 ***
@@ -189,6 +191,8 @@ The time when the user account was created. (datetime.datetime object)
 Get a list of up to 1100 of the users comments. See *Comment*
 + `await get_posts(limit=30, order='new')`
 Get a list of up to 100 of the user's posts. See *Post*
++ `await ban(reason)`
+Ban the user
 
 
 ***
