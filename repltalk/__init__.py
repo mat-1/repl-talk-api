@@ -658,6 +658,15 @@ class Post():
 		if not r:
 			raise AlreadyReported('This post has already been reported by this account.')
 		return r
+	
+	async def delete(self):
+		client = self.client
+		r = await client.perform_graphql(
+			'deletePost',
+			Queries.delete_post,
+			id=self.id,
+		)
+		return r
 
 	async def get_comments(self, order='new'):
 		_comments = await self.client._get_comments(
@@ -851,6 +860,16 @@ class User():
 
 		repl_list = [Repl(r) for r in repl_list_raw]
 		return repl_list
+	
+	async def ban(self, reason):
+		client = self.client
+		r = await client.perform_graphql(
+			'Mutation',
+			Queries.ban_user,
+			user=self.name,
+			reason=reason,
+		)
+		return r
 
 	def __repr__(self):
 		return f'<{self.name} ({self.cycles})>'

@@ -17,6 +17,9 @@ Logs in to Repl.it with your username and password. Your bot must be verified in
 + `await get_post(post_id)`
 Gets the post with that id. 
 *returns Post*
++ `await get_comment(comment_id)`
+Gets the comment with that id. 
+*returns Comment*
 + `await post_exists(post_id)`
 Returns whether or not the post exists.
 + `await get_leaderboard(limit=30)`
@@ -119,6 +122,8 @@ Gets the comments on the post.
 Posts a comment on the post.
 + `await report(reason)`
 Report the post
++ `await delete()`
+Delete the Post
 
 
 ***
@@ -186,6 +191,8 @@ The time when the user account was created. (datetime.datetime object)
 Get a list of up to 1100 of the users comments. See *Comment*
 + `await get_posts(limit=30, order='new')`
 Get a list of up to 100 of the user's posts. See *Post*
++ `await ban(reason)`
+Ban the user
 
 
 ***

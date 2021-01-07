@@ -276,6 +276,16 @@ class Queries:
 			})
 		}
 	)
+	
+	delete_post = '''
+	mutation deletePost($id: Int!) {
+		deletePost(id: $id) {
+			id
+			__typename
+		}
+	}	
+	'''
+	
 	# get_all_posts = f'''
 	# query posts($order: String, $after: String, $searchQuery: String) {{
 	# 	posts(order: $order, after: $after, searchQuery: $searchQuery) {{
@@ -501,6 +511,53 @@ class Queries:
 			}
 		)
 	)
+	
+	ban_user = '''
+	mutation Mutation($user: String!, $reason: String) {
+		clui {
+			moderator {
+				user {
+					ban(user: $user, reason: $reason) {
+						...CluiOutput
+						__typename
+					}
+					__typename
+				}
+				__typename
+			}
+			__typename
+		}
+	}
+	
+	fragment CluiOutput on CluiOutput {
+		... on CluiSuccessOutput {
+			message
+			json
+			__typename
+		}
+		... on CluiErrorOutput {
+			error
+			json
+			__typename
+		}
+		... on CluiMarkdownOutput {
+			markdown
+			__typename
+		}
+		... on CluiTableOutput {
+			columns {
+				label
+				key
+				__typename
+			}
+			rows
+			__typename
+		}
+		__typename
+	}
+	'''
+		
+	
 	report_attributes = graphql.Field(
 		{'creator': user_attributes},
 		'id',
