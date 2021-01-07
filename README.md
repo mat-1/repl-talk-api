@@ -119,6 +119,8 @@ Gets the comments on the post.
 Posts a comment on the post.
 + `await report(reason)`
 Report the post
++ `await delete()`
+Delete the post
 
 
 ***
