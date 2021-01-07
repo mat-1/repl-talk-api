@@ -658,6 +658,15 @@ class Post():
 		if not r:
 			raise AlreadyReported('This post has already been reported by this account.')
 		return r
+	
+	async def delete(self):
+		client = self.client
+		r = await client.perform_graphql(
+			'deletePost',
+			Queries.delete_post,
+			id=self.id,
+		)
+		return r
 
 	async def get_comments(self, order='new'):
 		_comments = await self.client._get_comments(
