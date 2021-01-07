@@ -532,6 +532,33 @@ class Queries:
 			__typename
 		}
 	}
+	
+	fragment CluiOutput on CluiOutput {
+		... on CluiSuccessOutput {
+			message
+			json
+			__typename
+		}
+		... on CluiErrorOutput {
+			error
+			json
+			__typename
+		}
+		... on CluiMarkdownOutput {
+			markdown
+			__typename
+		}
+		... on CluiTableOutput {
+			columns {
+				label
+				key
+				__typename
+			}
+			rows
+			__typename
+		}
+		__typename
+	"}
 	'''
 		
 	
