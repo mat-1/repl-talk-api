@@ -861,19 +861,6 @@ class User():
 		repl_list = [Repl(r) for r in repl_list_raw]
 		return repl_list
 	
-	async def report(self, reason):
-		client = self.client
-		r = await client.perform_graphql(
-			'createBoardReport',
-			Queries.create_report,
-			commentId=self.id,
-			reason=reason,
-			show_errors=False
-		)
-		if not r:
-			raise AlreadyReported('This comment has already been reported by this account.')
-		return r
-	
 	async def ban(self, reason):
 		client = self.client
 		r = await client.perform_graphql(
