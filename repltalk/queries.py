@@ -558,7 +558,7 @@ class Queries:
 			__typename
 		}
 		__typename
-	"}
+	}
 	'''
 		
 	
