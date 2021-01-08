@@ -295,6 +295,8 @@ The post's author
 The post's content
 + `title`
 The post's title
++ `await delete()`
+Delete the post
 + `await get_full_post()`
 Returns the full post
 
@@ -309,6 +311,8 @@ The comment's id
 The comment's author
 + `content`
 The comment's content
++ `await delete()`
+Delete the comment
 + `await get_full_comment()`
 Returns the full comment
 
