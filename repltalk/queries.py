@@ -286,6 +286,15 @@ class Queries:
 	}	
 	'''
 	
+	delete_comment = '''
+	mutation deleteComment($id: Int!) {
+		deleteComment(id: $id) {
+			id
+			__typename
+		}
+	}
+	'''
+	
 	# get_all_posts = f'''
 	# query posts($order: String, $after: String, $searchQuery: String) {{
 	# 	posts(order: $order, after: $after, searchQuery: $searchQuery) {{
