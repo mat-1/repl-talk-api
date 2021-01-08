@@ -79,6 +79,15 @@ class LazyPost():
 		self.content = data['body']
 		self.author = User(client, data['user'])
 		self.title = data['title']
+	
+	async def delete(self):
+		client = self.client
+		r = await client.perform_graphql(
+			'deletePost',
+			Queries.delete_post,
+			id=self.id,
+		)
+		return r
 
 	async def get_full_post(self):
 		return await self.client.get_post(self.id)
@@ -93,6 +102,15 @@ class LazyComment():
 		self.id = data['id']
 		self.content = data['body']
 		self.author = User(client, data['user'])
+		
+	async def delete(self):
+		client = self.client
+		r = await client.perform_graphql(
+			'deleteComment',
+			Queries.delete_comment,
+			id=self.id,
+		)
+		return r
 
 	async def get_full_comment(self):
 		return await self.client.get_comment(self.id)
@@ -443,6 +461,15 @@ class Comment():
 		)
 		if not r:
 			raise AlreadyReported('This comment has already been reported by this account.')
+		return r
+	
+	async def delete(self):
+		client = self.client
+		r = await client.perform_graphql(
+			'deleteComment',
+			Queries.delete_comment,
+			id=self.id,
+		)
 		return r
 	
 	def __hash__(self):

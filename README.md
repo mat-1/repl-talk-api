@@ -158,6 +158,8 @@ The parent comment, if any.
 Replies to the comment with the content.
 + `await report(reason)`
 Report the comment
++ `await delete()`
+Delete the comment
 
 ***
 ## User
@@ -293,6 +295,8 @@ The post's author
 The post's content
 + `title`
 The post's title
++ `await delete()`
+Delete the post
 + `await get_full_post()`
 Returns the full post
 
@@ -307,6 +311,8 @@ The comment's id
 The comment's author
 + `content`
 The comment's content
++ `await delete()`
+Delete the comment
 + `await get_full_comment()`
 Returns the full comment
 
