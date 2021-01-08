@@ -158,6 +158,8 @@ The parent comment, if any.
 Replies to the comment with the content.
 + `await report(reason)`
 Report the comment
++ `await delete()`
+Delete the comment
 
 ***
 ## User
