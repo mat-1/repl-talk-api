@@ -449,7 +449,7 @@ class Comment():
 		client = self.client
 		r = await client.perform_graphql(
 			'deleteComment',
-			repltalk.Queries.delete_comment,
+			Queries.delete_comment,
 			id=self.id,
 		)
 		return r
