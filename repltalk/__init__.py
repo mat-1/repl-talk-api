@@ -445,6 +445,15 @@ class Comment():
 			raise AlreadyReported('This comment has already been reported by this account.')
 		return r
 	
+	async def delete(self):
+		client = self.client
+		r = await client.perform_graphql(
+			'deleteComment',
+			repltalk.Queries.delete_comment,
+			id=self.id,
+		)
+		return r
+	
 	def __hash__(self):
 		return hash((self.id, self.content, self.votes, self.replies))
 
