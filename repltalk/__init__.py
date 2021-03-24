@@ -13,7 +13,7 @@ whitelisted_bots = {
 	'codingcactus'
 }
 
-base_url = 'https://repl.it'
+base_url = 'https://replit.com'
 
 
 class ReplTalkException(Exception): pass
