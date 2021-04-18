@@ -76,8 +76,8 @@ class Queries:
 		'isLoggedIn',
 		'bio',
 		'timeCreated',
+		'isHacker',
 		graphql.Field({'organization': 'name'}),
-		graphql.Field({'subscription': 'planId'}),
 		languages_field,
 		graphql.Field({'roles': ('id', 'name', 'key', 'tagline')}),
 	))
