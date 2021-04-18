@@ -143,11 +143,11 @@ class TestReplTalk(unittest.TestCase):
 			})
 		else:
 			return repltalk.Post(self.client, {
-				'id': '22109',
+				'id': '135633',
 				'title': 'Repl Talk Rules and Guidelines [README]',
 				'body': 'Rules',
 				'isAnnouncement': True,
-				'url': '/talk/announcements/Repl-Talk-Rules-and-Guidelines-README/22109',
+				'url': '/talk/announcements/Repl-Talk-Rules-and-Guidelines-README/135633',
 				'board': self.make_example_board().data,
 				'timeCreated': '2000-1-01T01:01:00.000Z',
 				'canEdit': False,
