@@ -187,6 +187,8 @@ What the user set as their last name in their profile
 The *Language*s that the user uses most often.
 + `timestamp`
 The time when the user account was created. (datetime.datetime object)
++ `is_hacker`
+Whether the user has the hacker plan
 + `await get_comments(limit=30, order='new')`
 Get a list of up to 1100 of the users comments. See *Comment*
 + `await get_posts(limit=30, order='new')`
