@@ -135,9 +135,9 @@ class TestReplTalk(unittest.TestCase):
 	def make_example_post(self, lazy=False):
 		if lazy:
 			return repltalk.LazyPost(self.client, {
-				'id': '22109',
+				'id': '135633',
 				'title': 'Repl Talk Rules and Guidelines [README]',
-				'url': '/talk/announcements/Repl-Talk-Rules-and-Guidelines-README/22109',
+				'url': '/talk/announcements/Repl-Talk-Rules-and-Guidelines-README/135633',
 				'body': None,
 				'user': self.make_example_user().data,
 			})
