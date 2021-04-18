@@ -115,7 +115,7 @@ class TestReplTalk(unittest.TestCase):
 			'organization': None,
 			'isLoggedIn': False,
 			'bio': 'I do dev. https://matdoes.dev',
-			'subscription': None,
+			'isHacker': True,
 			'languages': []
 		}
 		data.update(override)
