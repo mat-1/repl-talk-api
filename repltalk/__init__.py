@@ -733,33 +733,6 @@ class Post():
 		))
 
 
-class Subscription():
-	__slots__ = ('name', 'id')
-
-	def __init__(
-		self, client, user, data
-	):
-		self.id = data['planId']
-		if self.id == 'hacker2':
-			self.name = 'hacker'
-		else:
-			self.name = self.id
-
-	def __str__(self):
-		return self.name
-
-	def __repr__(self):
-		return f'<{self.id}>'
-
-	def __eq__(self, sub2):
-		return self.id == sub2.id
-
-	def __ne__(self, sub2):
-		return self.id != sub2.id
-
-	def __hash__(self):
-		return hash((self.id, self.name))
-
 
 class Organization():
 	__slots__ = ('name',)
@@ -789,7 +762,7 @@ class User():
 	__slots__ = (
 		'client', 'data', 'id', 'name', 'avatar', 'url', 'cycles', 'roles',
 		'full_name', 'first_name', 'last_name', 'organization', 'is_logged_in',
-		'bio', 'subscription', 'languages', 'timestamp', 'data'
+		'bio', 'is_hacker', 'languages', 'timestamp', 'data'
 	)
 
 	def __init__(
@@ -804,6 +777,7 @@ class User():
 		self.url = user['url']
 		self.cycles = user['karma']
 		self.roles = user['roles']
+		self.is_hacker = user["isHacker"]
 
 		self.full_name = user['fullName']
 		self.first_name = user['firstName']
@@ -820,12 +794,6 @@ class User():
 		self.organization = organization
 		self.is_logged_in = user['isLoggedIn']
 		self.bio = user['bio']
-		# If the user has a subscription, turn it into
-		# a Subscription object
-		subscription = user['subscription']
-		if subscription:
-			subscription = Subscription(client, self, subscription)
-		self.subscription = subscription
 		# Convert all of the user's frequently used
 		# languages into Language objects
 		self.languages = [

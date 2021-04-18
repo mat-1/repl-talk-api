@@ -179,8 +179,6 @@ The roles the user has set on their profile.
 The short description written by a user on their profile.
 + `organization` 
 The organization that the user is a part of. This can be None. See *Organization*
-+ `subscription` 
-The subscription that the user has. This can be None. See *Subscription*
 + `first_name`
 What the user set as their first name in their profile
 + `last_name`
@@ -189,6 +187,8 @@ What the user set as their last name in their profile
 The *Language*s that the user uses most often.
 + `timestamp`
 The time when the user account was created. (datetime.datetime object)
++ `is_hacker`
+Whether the user has the hacker plan
 + `await get_comments(limit=30, order='new')`
 Get a list of up to 1100 of the users comments. See *Comment*
 + `await get_posts(limit=30, order='new')`
@@ -239,14 +239,6 @@ A short description of the language.
 The organization users are a part of
 + `name`
 The name of the organization
-
-***
-## Subscription
-A subscription that a user bought.
-+ `name`
-The name of the subscription
-+ `id`
-The id of the subscription
 
 ***
 ## Report List

@@ -115,7 +115,7 @@ class TestReplTalk(unittest.TestCase):
 			'organization': None,
 			'isLoggedIn': False,
 			'bio': 'I do dev. https://matdoes.dev',
-			'subscription': None,
+			'isHacker': True,
 			'languages': []
 		}
 		data.update(override)
@@ -135,19 +135,19 @@ class TestReplTalk(unittest.TestCase):
 	def make_example_post(self, lazy=False):
 		if lazy:
 			return repltalk.LazyPost(self.client, {
-				'id': '22109',
+				'id': '135633',
 				'title': 'Repl Talk Rules and Guidelines [README]',
-				'url': '/talk/announcements/Repl-Talk-Rules-and-Guidelines-README/22109',
+				'url': '/talk/announcements/Repl-Talk-Rules-and-Guidelines-README/135633',
 				'body': None,
 				'user': self.make_example_user().data,
 			})
 		else:
 			return repltalk.Post(self.client, {
-				'id': '22109',
+				'id': '135633',
 				'title': 'Repl Talk Rules and Guidelines [README]',
 				'body': 'Rules',
 				'isAnnouncement': True,
-				'url': '/talk/announcements/Repl-Talk-Rules-and-Guidelines-README/22109',
+				'url': '/talk/announcements/Repl-Talk-Rules-and-Guidelines-README/135633',
 				'board': self.make_example_board().data,
 				'timeCreated': '2000-1-01T01:01:00.000Z',
 				'canEdit': False,
