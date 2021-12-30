@@ -53,9 +53,9 @@ The *Challenge* board on Repl Talk.
 + `learn`
 The *Learn* board on Repl Talk.
 ***
-+ `async for post in get_posts(sort='top', search='')`
++ `async for post in get_posts(sort='Top', search='')`
 Gets the most recent posts from that board.
-Sort is the sorting order (top|hot|new) and search is the search query.
+Sort is the sorting order (Top|Hot|New) and search is the search query.
 *returns AsyncPostList*
 ### RichBoard
 A board that contains all the information from *Board*, and more.
@@ -177,8 +177,6 @@ The amount of cycles/karma that user has.
 The roles the user has set on their profile.
 + `bio` 
 The short description written by a user on their profile.
-+ `organization` 
-The organization that the user is a part of. This can be None. See *Organization*
 + `first_name`
 What the user set as their first name in their profile
 + `last_name`
@@ -233,12 +231,6 @@ Gets the category that the language is listed as.
 Whether the language was recently added to Repl.it.
 + `tagline`
 A short description of the language.
-
-***
-## Organization
-The organization users are a part of
-+ `name`
-The name of the organization
 
 ***
 ## Report List

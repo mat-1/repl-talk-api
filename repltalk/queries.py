@@ -77,7 +77,6 @@ class Queries:
 		'bio',
 		'timeCreated',
 		'isHacker',
-		graphql.Field({'organization': 'name'}),
 		languages_field,
 		graphql.Field({'roles': ('id', 'name', 'key', 'tagline')}),
 	))
@@ -216,7 +215,6 @@ class Queries:
 		'isAnswerable',
 		{'answeredBy': user_attributes},
 		{'answer': comment_attributes},
-		'tutorialPages',
 		graphql.Field(
 			'preview',
 			args={
@@ -308,34 +306,22 @@ class Queries:
 	# }}
 	# '''
 	posts_feed = graphql.Query(
-		'PostsFeed',
+		'ReplPostsFeed',
 		{
+			"$options": "ReplPostsQueryOptions",			
+			'$count': 'Int',
 			'$order': 'String',
 			'$after': 'String',
-			'$searchQuery': 'String',
-			'$languages': '[String!]',
-			'$count': 'Int',
-			'$boardSlugs': '[String!]',
-			'$pinAnnouncements': 'Boolean',
-			'$pinPinned': 'Boolean',
-
 			'$votesBefore': 'String',
 			'$votesAfter': 'String',
 			'$votesCount': 'Int',
 			'$votesOrder': 'String',
-			'$votesDirection': 'String'
+			'$votesDirection': 'String',
 		},
 		graphql.Field(
-			name='posts',
+			name='replPosts',
 			args={
-				'order': '$order',
-				'after': '$after',
-				'searchQuery': '$searchQuery',
-				'languages': '$languages',
-				'count': '$count',
-				'boardSlugs': '$boardSlugs',
-				'pinAnnouncements': '$pinAnnouncements',
-				'pinPinned': '$pinPinned'
+				'options': '$options'
 			},
 			data=connection_generator(post_attributes)
 		)
