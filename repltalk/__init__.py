@@ -751,7 +751,7 @@ class User():
 		self.url = user['url']
 		self.cycles = user['karma']
 		self.roles = user['roles']
-		self.is_hacker = user["isHacker"]
+		self.is_hacker = user['isHacker']
 
 		self.full_name = user['fullName']
 		self.first_name = user['firstName']
@@ -1058,15 +1058,15 @@ class Client():
 		)
 
 	async def _get_all_posts(
-		self, order='New', search_query=None, after=None
+		self, order='new', search_query=None, after=None
 	):
 		if after is None:
 			posts = await self.perform_graphql(
 			'ReplPostsFeed',
 			Queries.posts_feed,
 			options={
-				"order": order,
-				"searchQuery": search_query
+				'order': order.title(),
+				'searchQuery': search_query
 			}			
 		)
 			return posts
@@ -1075,9 +1075,9 @@ class Client():
 			'ReplPostsFeed',
 			Queries.posts_feed,
 			options={
-				"order": order,
-				"searchQuery": search_query,
-				"after": after
+				'order': order.title(),
+				'searchQuery': search_query,
+				'after': after
 			}			
 		)
 			return posts
@@ -1095,7 +1095,7 @@ class Client():
 	async def _posts_in_board(
 		self,
 		board_slugs=None,
-		order='New',
+		order='new',
 		search_query=None,
 		after=None
 	):
@@ -1103,10 +1103,10 @@ class Client():
 			'ReplPostsFeed',
 			Queries.posts_feed,
 			options={
-				"boardSlugs": board_slugs,
-				"order": order,
-				"searchQuery": search_query,
-				"after": after
+				'boardSlugs': board_slugs,
+				'order': order.title(),
+				'searchQuery': search_query,
+				'after': after
 			}			
 		)
 		return posts

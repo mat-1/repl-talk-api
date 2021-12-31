@@ -77,7 +77,7 @@ class TestReplTalk(unittest.TestCase):
 		self.run_async(self.async_test_leaderboards())
 
 	async def async_test_get_new_posts(self):
-		async for post in self.client.boards.all.get_posts(sort='New'):
+		async for post in self.client.boards.all.get_posts(sort='new'):
 			pass
 
 	def test_get_new_posts(self):
@@ -94,7 +94,7 @@ class TestReplTalk(unittest.TestCase):
 		self.assertEqual(str(post.language), 'Python')
 
 	async def async_test_async_for_posts(self):
-		async for post in self.client.boards.all.get_posts(sort='New', limit=64):
+		async for post in self.client.boards.all.get_posts(sort='new', limit=64):
 			self.assertIsInstance(post, repltalk.Post)
 
 	def test_async_for_posts(self):
