@@ -1060,18 +1060,7 @@ class Client():
 	async def _get_all_posts(
 		self, order='new', search_query=None, after=None
 	):
-		if after is None:
-			posts = await self.perform_graphql(
-			'ReplPostsFeed',
-			Queries.posts_feed,
-			options={
-				'order': order.title(),
-				'searchQuery': search_query
-			}			
-		)
-			return posts
-		else:
-			posts = await self.perform_graphql(
+		posts = await self.perform_graphql(
 			'ReplPostsFeed',
 			Queries.posts_feed,
 			options={
@@ -1080,7 +1069,7 @@ class Client():
 				'after': after
 			}			
 		)
-			return posts
+		return posts
 
 	async def get_user_by_id(self, user_id):
 		return User(
