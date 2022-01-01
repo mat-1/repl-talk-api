@@ -14,7 +14,7 @@ class TestReplTalk(unittest.TestCase):
 		self.run_async = self.loop.run_until_complete
 
 	async def async_test_board_posts(self):
-		async for post in self.client.boards.all.get_posts(sort='New', limit=1):
+		async for post in self.client.boards.all.get_posts(sort='new', limit=1):
 			self.assertIsInstance(post.author, repltalk.User)
 
 	def test_board_posts(self):

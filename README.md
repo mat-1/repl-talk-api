@@ -53,9 +53,9 @@ The *Challenge* board on Repl Talk.
 + `learn`
 The *Learn* board on Repl Talk.
 ***
-+ `async for post in get_posts(sort='Top', search='')`
++ `async for post in get_posts(sort='top', search='')`
 Gets the most recent posts from that board.
-Sort is the sorting order (Top|Hot|New) and search is the search query.
+Sort is the sorting order (top|hot|new) and search is the search query.
 *returns AsyncPostList*
 ### RichBoard
 A board that contains all the information from *Board*, and more.
