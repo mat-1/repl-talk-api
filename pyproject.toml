@@ -15,6 +15,7 @@ aiohttp = "^3.6"
 python = "^3.8"
 
 [tool.poetry.dev-dependencies]
+flake8 = "^4.0"
 
 [build-system]
 build-backend = "poetry.masonry.api"
