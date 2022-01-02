@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
 	name='repltalk',
-	version='1.0.0',
+	version='1.0.1',
 	author='mat',
 	author_email='pypi@matdoes.dev',
 	description='Allows you to do various things with the kind of unofficial Repl.it Repl Talk API',
