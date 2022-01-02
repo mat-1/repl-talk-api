@@ -177,8 +177,6 @@ The amount of cycles/karma that user has.
 The roles the user has set on their profile.
 + `bio` 
 The short description written by a user on their profile.
-+ `organization` 
-The organization that the user is a part of. This can be None. See *Organization*
 + `first_name`
 What the user set as their first name in their profile
 + `last_name`
@@ -233,12 +231,6 @@ Gets the category that the language is listed as.
 Whether the language was recently added to Repl.it.
 + `tagline`
 A short description of the language.
-
-***
-## Organization
-The organization users are a part of
-+ `name`
-The name of the organization
 
 ***
 ## Report List

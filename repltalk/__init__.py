@@ -485,7 +485,6 @@ class Board():
 	async def _get_posts(self, sort, search, after):
 		return await self.client._posts_in_board(
 			board_slugs=[self.name],
-			languages=[],
 			order=sort,
 			search_query=search,
 			after=after
@@ -733,35 +732,10 @@ class Post():
 		))
 
 
-
-class Organization():
-	__slots__ = ('name',)
-
-	def __init__(
-		self, data
-	):
-		self.name = data['name']
-
-	def __str__(self):
-		return self.name
-
-	def __repr__(self):
-		return f'<{self.name}>'
-
-	def __eq__(self, sub2):
-		return self.name == sub2.name
-
-	def __ne__(self, sub2):
-		return self.name != sub2.name
-
-	def __hash__(self):
-		return hash((self.name,))
-
-
 class User():
 	__slots__ = (
 		'client', 'data', 'id', 'name', 'avatar', 'url', 'cycles', 'roles',
-		'full_name', 'first_name', 'last_name', 'organization', 'is_logged_in',
+		'full_name', 'first_name', 'last_name', 'is_logged_in',
 		'bio', 'is_hacker', 'languages', 'timestamp', 'data'
 	)
 
@@ -777,7 +751,7 @@ class User():
 		self.url = user['url']
 		self.cycles = user['karma']
 		self.roles = user['roles']
-		self.is_hacker = user["isHacker"]
+		self.is_hacker = user['isHacker']
 
 		self.full_name = user['fullName']
 		self.first_name = user['firstName']
@@ -786,12 +760,6 @@ class User():
 		time_created = user['timeCreated']
 		self.timestamp = datetime.strptime(time_created, '%Y-%m-%dT%H:%M:%S.%fZ')
 
-		# If the user is in an organization, turn it into
-		# am Organization object
-		organization = user['organization']
-		if organization:
-			organization = Organization(organization)
-		self.organization = organization
 		self.is_logged_in = user['isLoggedIn']
 		self.bio = user['bio']
 		# Convert all of the user's frequently used
@@ -1090,25 +1058,18 @@ class Client():
 		)
 
 	async def _get_all_posts(
-		self, order='new', search_query='', after=None
+		self, order='new', search_query=None, after=None
 	):
-		if after is None:
-			posts = await self.perform_graphql(
-				'posts',
-				Queries.get_all_posts,
-				order=order,
-				searchQuery=search_query
-			)
-			return posts
-		else:
-			posts = await self.perform_graphql(
-				'posts',
-				Queries.get_all_posts,
-				order=order,
-				searchQuery=search_query,
-				after=after
-			)
-			return posts
+		posts = await self.perform_graphql(
+			'ReplPostsFeed',
+			Queries.posts_feed,
+			options={
+				'order': order.title(),
+				'searchQuery': search_query,
+				'after': after
+			}			
+		)
+		return posts
 
 	async def get_user_by_id(self, user_id):
 		return User(
@@ -1123,20 +1084,19 @@ class Client():
 	async def _posts_in_board(
 		self,
 		board_slugs=None,
-		languages=[],
 		order='new',
 		search_query=None,
 		after=None
 	):
 		posts = await self.perform_graphql(
-			'PostsFeed',
+			'ReplPostsFeed',
 			Queries.posts_feed,
-			ignore_none=True,
-			boardSlugs=board_slugs,
-			languages=languages,
-			order=order,
-			searchQuery=search_query,
-			after=after
+			options={
+				'boardSlugs': board_slugs,
+				'order': order.title(),
+				'searchQuery': search_query,
+				'after': after
+			}			
 		)
 		return posts
 
