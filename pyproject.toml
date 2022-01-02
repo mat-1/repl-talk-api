@@ -1,14 +1,22 @@
+[tool]
+[tool.poetry]
+name = "repltalk"
+version = "1.0.1"
+description = "Allows you to do various things with the kind of unofficial Replit Repl Talk API"
+authors = ["mat <pypirepltalk@matdoes.dev>"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/mat-1/repl-talk-api"
+repository = "https://github.com/mat-1/repl-talk-api"
+include = ["LICENSE"]
+
+[tool.poetry.dependencies]
+aiohttp = "^3.6"
+python = "^3.8"
+
+[tool.poetry.dev-dependencies]
+
 [build-system]
 build-backend = "poetry.masonry.api"
 requires = ["poetry>=0.12"]
 
-[tool]
-[tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = ""
-name = "runner"
-version = "0.1.0"
-[tool.poetry.dependencies]
-aiohttp = "^3.6"
-python = "^3.8"
-[tool.poetry.dev-dependencies]
